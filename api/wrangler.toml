@@ -1,0 +1,8 @@
+name = "packright-api"
+main = "src/index.ts"
+compatibility_date = "2024-03-20"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "packright-db"
+database_id = "89c7150a-0077-4fd8-b3a2-8b4c59c4331e"
