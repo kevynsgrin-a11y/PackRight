@@ -1,0 +1,108 @@
+name: CI
+
+# The repository had no CI. The August 2026 audit asked for a build that
+# typechecks and a performance budget enforced in CI (issue P1-14); the scripts
+# for both exist, so this runs them on every change.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (typecheck + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # The test runner uses --experimental-strip-types, which needs Node 22.6+.
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - run: npm ci
+        working-directory: api
+
+      - name: Typecheck and run the fee engine tests
+        run: npm run check
+        working-directory: api
+
+  frontend:
+    name: Frontend (lint, typecheck, build, budget)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+        working-directory: frontend
+
+      - run: npm run lint
+        working-directory: frontend
+
+      # Typechecks, builds the client and SSR bundles, prerenders every
+      # canonical route, then fails if the Brotli budget is exceeded.
+      - name: Build and check the performance budget
+        run: npm run build
+        working-directory: frontend
+
+      - name: Check the prerendered output
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+
+          # robots.txt and sitemap.xml must be real files, not the SPA shell.
+          grep -q '^User-agent: \*' dist/robots.txt
+          grep -q 'sitemaps.org/schemas/sitemap' dist/sitemap.xml
+
+          # The home page must carry a real title, not the old "frontend".
+          grep -q '<title>Airline Baggage Fee Calculator' dist/index.html
+          if grep -q '<title>frontend</title>' dist/index.html; then
+            echo "Home page still has the placeholder title"; exit 1
+          fi
+
+          # Unknown paths need a branded, noindex 404 document to serve.
+          grep -q 'noindex' dist/404.html
+
+          # No placeholder links may ship (audit issue P0-05).
+          if grep -rq 'href="#"' dist --include='*.html'; then
+            echo "Found placeholder href=\"#\" links in the built output"; exit 1
+          fi
+
+  data:
+    name: Reference data (generated seed is current)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # api/seed.sql is generated from data/reference-data.json. Regenerating it
+      # is deterministic, so a diff here means the dataset changed without the
+      # seed being regenerated.
+      - name: Regenerate the seed and check it matches
+        working-directory: api
+        run: |
+          set -euo pipefail
+          node scripts/generate-seed.mjs
+          if ! git diff --exit-code -- seed.sql; then
+            echo "api/seed.sql is out of date. Run 'npm run generate:seed' in api/ and commit the result."
+            exit 1
+          fi
