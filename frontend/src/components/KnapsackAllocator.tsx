@@ -1,112 +1,214 @@
-import React from 'react'
-import { Backpack, ShieldAlert, GripVertical } from 'lucide-react'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-import type { DropResult } from '@hello-pangea/dnd'
-
-interface Item {
-  id: string
-  name: string
-  weight: number
-  tsa: 'safe' | 'checked_only' | 'prohibited'
-}
-
-interface Bins {
-  personal: { items: Item[] }
-  carry_on: { items: Item[] }
-  checked: { items: Item[] }
-}
+import { useId, useState } from 'react'
+import { Backpack, ShieldAlert } from 'lucide-react'
+import type { BagType } from '../lib/api'
+import { BIN_LABELS, BIN_ORDER, binTotalWeight } from '../lib/bins'
+import type { BinDimensions, Bins } from '../lib/bins'
+import { formatDimensions } from '../lib/format'
 
 interface Props {
-  result: any
   bins: Bins
-  onDragEnd: (result: DropResult) => void
+  onMoveItem: (itemId: string, from: BagType, to: BagType) => void
+  onDimensionChange: (bin: BagType, axis: keyof BinDimensions, value: number | null) => void
+  onEmptyWeightChange: (bin: BagType, value: number | null) => void
+  /** Airline allowances, for the "fits / does not fit" hint next to each bag. */
+  allowances: Partial<Record<BagType, BinDimensions>>
 }
 
-export default function KnapsackAllocator({ result, bins, onDragEnd }: Props) {
-  if (!result) return null;
+/**
+ * Moving items between bags.
+ *
+ * Audit issue P1-12: the previous implementation used drag handles that were
+ * focusable role="button" elements with no accessible name, and offered no
+ * keyboard path at all. Every item now has a labelled "Move to" control that
+ * works with a keyboard, a screen reader and touch. Pointer drag-and-drop is
+ * kept as an enhancement using native HTML drag events, which also removed a
+ * ~100 KB drag-and-drop dependency from the startup bundle (P1-14).
+ */
+export default function KnapsackAllocator({
+  bins,
+  onMoveItem,
+  onDimensionChange,
+  onEmptyWeightChange,
+  allowances,
+}: Props) {
+  const baseId = useId()
+  const [dragging, setDragging] = useState<{ itemId: string; from: BagType } | null>(null)
+  const [dragOver, setDragOver] = useState<BagType | null>(null)
+
+  const handleDrop = (to: BagType) => {
+    if (dragging && dragging.from !== to) onMoveItem(dragging.itemId, dragging.from, to)
+    setDragging(null)
+    setDragOver(null)
+  }
 
   return (
-    <div className="glass-panel p-6 mt-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-premium-700 rounded-lg">
-          <Backpack className="w-5 h-5 text-accent-secondary" />
-        </div>
-        <h2 className="text-xl font-semibold">Smart Packing Allocator</h2>
+    <section className="glass-panel p-6" aria-labelledby={`${baseId}-heading`}>
+      <div className="flex items-center gap-3 mb-2">
+        <span className="p-2 bg-premium-700 rounded-lg">
+          <Backpack className="w-5 h-5 text-accent-secondary" aria-hidden="true" />
+        </span>
+        <h2 id={`${baseId}-heading`} className="text-xl font-semibold">
+          Smart Packing Allocator
+        </h2>
       </div>
+      <p className="text-sm text-text-muted mb-6">
+        Move items between bags to see how the estimate changes. Drag with a mouse, or use each
+        item&rsquo;s <span className="text-white">Move to</span> control. Add your bag&rsquo;s
+        measurements to check it against the airline allowance.
+      </p>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {Object.entries(bins).map(([binId, binData]) => {
-            const totalWeight = binData.items.reduce((sum, item) => sum + item.weight, 0);
-            
-            return (
-              <Droppable key={binId} droppableId={binId}>
-                {(provided, snapshot) => (
-                  <div 
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`bg-premium-900/50 rounded-xl p-4 border border-dashed transition-colors min-h-[200px] flex flex-col
-                      ${snapshot.isDraggingOver ? 'border-accent-secondary bg-premium-800/80' : 'border-white/10'}
-                    `}
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-sm text-text-muted capitalize">
-                        {binId.replace('_', ' ')}
-                      </h3>
-                      <span className="text-xs text-text-muted">{totalWeight} lbs</span>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {BIN_ORDER.map((binId) => {
+          const bin = bins[binId]
+          const allowance = allowances[binId]
+          const total = binTotalWeight(bin)
+          const hasMisplacedItem = bin.items.some((i) => i.tsa === 'checked_only') && binId !== 'checked'
+          const allowanceText = allowance
+            ? formatDimensions(allowance.length, allowance.width, allowance.height)
+            : null
 
-                    <div className="space-y-2 flex-grow">
-                      {binData.items.map((item, index) => (
-                        <Draggable key={item.id} draggableId={item.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`bg-premium-800 rounded-lg p-3 text-sm shadow-sm border border-white/5 flex items-center justify-between
-                                ${snapshot.isDragging ? 'ring-2 ring-accent-primary shadow-xl opacity-90' : ''}
-                                ${item.tsa === 'checked_only' && binId !== 'checked' ? 'bg-red-500/10 border-red-500/30' : ''}
-                              `}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div {...provided.dragHandleProps} className="text-text-muted hover:text-white cursor-grab active:cursor-grabbing">
-                                  <GripVertical className="w-4 h-4" />
-                                </div>
-                                <span className={item.tsa === 'checked_only' && binId !== 'checked' ? 'text-red-200' : 'text-white'}>
-                                  {item.name}
-                                </span>
-                              </div>
-                              <span className="text-xs text-text-muted">{item.weight}lbs</span>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                      
-                      {/* Empty state hint */}
-                      {binData.items.length === 0 && !snapshot.isDraggingOver && (
-                        <div className="text-xs text-center mt-8 text-text-muted opacity-50">
-                          Drag items here
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Validation Warnings */}
-                    {binData.items.some(i => i.tsa === 'checked_only') && binId !== 'checked' && (
-                      <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-xs flex items-start gap-2">
-                        <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
-                        <span className="text-red-200">Contains items that must be checked (e.g. Liquids &gt; 3.4oz)</span>
+          return (
+            <div
+              key={binId}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragOver(binId)
+              }}
+              onDragLeave={() => setDragOver((current) => (current === binId ? null : current))}
+              onDrop={(e) => {
+                e.preventDefault()
+                handleDrop(binId)
+              }}
+              className={`bg-premium-900/50 rounded-xl p-4 border border-dashed transition-colors flex flex-col ${
+                dragOver === binId ? 'border-accent-secondary bg-premium-800/80' : 'border-white/10'
+              }`}
+            >
+              <div className="flex justify-between items-baseline mb-1">
+                <h3 className="font-medium text-sm text-white">{BIN_LABELS[binId]}</h3>
+                <span className="text-xs text-text-muted">{total} lb</span>
+              </div>
+              <p className="text-xs text-text-muted mb-3">
+                {allowanceText ? `Allowance ${allowanceText}` : 'Allowance not published'}
+              </p>
+
+              <ul className="space-y-2 grow list-none" aria-label={`Items in your ${BIN_LABELS[binId].toLowerCase()}`}>
+                {bin.items.map((item) => {
+                  const misplaced = item.tsa === 'checked_only' && binId !== 'checked'
+                  const selectId = `${baseId}-move-${item.id}`
+                  return (
+                    <li
+                      key={item.id}
+                      draggable
+                      onDragStart={() => setDragging({ itemId: item.id, from: binId })}
+                      onDragEnd={() => {
+                        setDragging(null)
+                        setDragOver(null)
+                      }}
+                      className={`bg-premium-800 rounded-lg p-3 text-sm shadow-sm border transition-shadow ${
+                        misplaced ? 'bg-red-500/10 border-red-500/30' : 'border-white/5'
+                      } ${dragging?.itemId === item.id ? 'ring-2 ring-accent-primary opacity-90' : ''}`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className={misplaced ? 'text-red-200' : 'text-white'}>{item.name}</span>
+                        <span className="text-xs text-text-muted shrink-0">{item.weight} lb</span>
                       </div>
-                    )}
-                  </div>
-                )}
-              </Droppable>
-            );
-          })}
 
-        </div>
-      </DragDropContext>
-    </div>
+                      <label htmlFor={selectId} className="sr-only">
+                        Move {item.spokenName} to another bag
+                      </label>
+                      <select
+                        id={selectId}
+                        value={binId}
+                        onChange={(e) => onMoveItem(item.id, binId, e.target.value as BagType)}
+                        className="w-full bg-premium-900 border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                      >
+                        {BIN_ORDER.map((target) => (
+                          <option key={target} value={target}>
+                            {target === binId ? `In ${BIN_LABELS[target].toLowerCase()}` : `Move to ${BIN_LABELS[target].toLowerCase()}`}
+                          </option>
+                        ))}
+                      </select>
+                    </li>
+                  )
+                })}
+
+                {bin.items.length === 0 ? (
+                  <li className="text-xs text-center py-6 text-text-muted opacity-70">
+                    No items in this bag
+                  </li>
+                ) : null}
+              </ul>
+
+              {hasMisplacedItem ? (
+                <p className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-xs flex items-start gap-2">
+                  <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
+                  <span className="text-red-200">
+                    Contains an item the TSA does not allow through a checkpoint. Move it to your
+                    checked bag.
+                  </span>
+                </p>
+              ) : null}
+
+              <fieldset className="mt-4 border-t border-white/5 pt-3">
+                <legend className="text-xs text-text-muted mb-2">
+                  {BIN_LABELS[binId]} measurements (inches)
+                </legend>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['length', 'width', 'height'] as const).map((axis) => {
+                    const inputId = `${baseId}-${binId}-${axis}`
+                    return (
+                      <div key={axis}>
+                        <label htmlFor={inputId} className="block text-[11px] text-text-muted mb-1 capitalize">
+                          {axis}
+                        </label>
+                        <input
+                          id={inputId}
+                          name={`${binId}-${axis}`}
+                          type="number"
+                          inputMode="decimal"
+                          min={1}
+                          max={120}
+                          step={0.5}
+                          placeholder="--"
+                          value={bin.dimensions[axis] ?? ''}
+                          onChange={(e) =>
+                            onDimensionChange(binId, axis, e.target.value === '' ? null : Number(e.target.value))
+                          }
+                          className="w-full bg-premium-900 border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-2">
+                  <label
+                    htmlFor={`${baseId}-${binId}-empty-weight`}
+                    className="block text-[11px] text-text-muted mb-1"
+                  >
+                    Empty bag weight (lb)
+                  </label>
+                  <input
+                    id={`${baseId}-${binId}-empty-weight`}
+                    name={`${binId}-empty-weight`}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    placeholder="0"
+                    value={bin.emptyWeight ?? ''}
+                    onChange={(e) =>
+                      onEmptyWeightChange(binId, e.target.value === '' ? null : Number(e.target.value))
+                    }
+                    className="w-full bg-premium-900 border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  />
+                </div>
+              </fieldset>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }

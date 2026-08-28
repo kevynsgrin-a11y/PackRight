@@ -2,15 +2,15 @@
 
 @theme {
   --font-sans: "Inter", "Outfit", system-ui, sans-serif;
-  
+
   --color-premium-900: #0f1115;
   --color-premium-800: #1a1d24;
   --color-premium-700: #2a2e37;
-  
+
   --color-accent-primary: #8b5cf6; /* Vibrant Purple */
   --color-accent-secondary: #0ea5e9; /* Vibrant Teal/Blue */
   --color-accent-danger: #f43f5e; /* Warning/Danger */
-  
+
   --color-text-main: #f8fafc;
   --color-text-muted: #94a3b8;
 }
@@ -37,18 +37,70 @@ body {
   @apply bg-gradient-to-br from-accent-primary to-accent-secondary;
 }
 
+/* Typography for content pages. Tailwind's typography plugin is not installed,
+   and a handful of rules is lighter than adding it. */
+.prose-pr {
+  @apply text-text-muted leading-relaxed;
+}
+.prose-pr h2 {
+  @apply text-2xl font-semibold text-white mt-10 mb-3 scroll-mt-24;
+}
+.prose-pr h3 {
+  @apply text-lg font-semibold text-white mt-6 mb-2 scroll-mt-24;
+}
+.prose-pr p {
+  @apply my-4;
+}
+.prose-pr ul {
+  @apply my-4 space-y-2 list-disc pl-5;
+}
+.prose-pr ol {
+  @apply my-4 space-y-2 list-decimal pl-5;
+}
+.prose-pr a {
+  @apply text-accent-secondary underline underline-offset-2 hover:text-white rounded;
+}
+.prose-pr a:focus-visible {
+  @apply outline-none ring-2 ring-accent-primary;
+}
+.prose-pr strong {
+  @apply text-white font-semibold;
+}
+.prose-pr code {
+  @apply rounded bg-premium-700 px-1.5 py-0.5 text-sm text-white;
+}
+.prose-pr dt {
+  @apply text-white font-medium mt-4;
+}
+.prose-pr dd {
+  @apply mt-1;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: theme('colors.premium-900');
+  background: var(--color-premium-900);
 }
 ::-webkit-scrollbar-thumb {
-  background: theme('colors.premium-700');
+  background: var(--color-premium-700);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: theme('colors.accent-primary');
+  background: var(--color-accent-primary);
+}
+
+/* The interface is a single dark theme by design. Honour a user's request for
+   less motion rather than animating regardless. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

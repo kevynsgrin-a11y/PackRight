@@ -1,0 +1,8 @@
+# PackRight — https://luggageliason.com
+# Served as a real static file. It previously returned the SPA HTML shell,
+# so crawler directives and sitemap discovery both failed (audit issue P0-02).
+
+User-agent: *
+Allow: /
+
+Sitemap: https://luggageliason.com/sitemap.xml

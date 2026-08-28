@@ -2,12 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0f1115" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- The calculator's first action is a call to the API on another origin. -->
+    <link rel="preconnect" href="https://packright-api.kevynsgrin.workers.dev" crossorigin />
+    <link rel="dns-prefetch" href="https://packright-api.kevynsgrin.workers.dev" />
+
+    <!--
+      Per-route metadata. Injected from src/lib/seo.ts by a Vite plugin for the
+      dev server and the base build, then replaced per route by
+      scripts/prerender.mjs so every prerendered page ships its own title,
+      description, canonical, social tags and JSON-LD.
+    -->
+    <!--seo-->
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--app-html--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
