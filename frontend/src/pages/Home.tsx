@@ -7,7 +7,7 @@ import FeeAvoidanceTips from '../components/FeeAvoidanceTips'
 import KnapsackAllocator from '../components/KnapsackAllocator'
 import { BIN_LABELS, BIN_ORDER, binTotalWeight } from '../lib/bins'
 import type { BinDimensions, Bins } from '../lib/bins'
-import { ApiClientError, calculateFees, fetchReference } from '../lib/api'
+import { ApiClientError, calculateFees, fetchReference, withRetry } from '../lib/api'
 import type { BagInput, BagType, CalculationPayload, CalculationResult, ReferenceBundle } from '../lib/api'
 import {
   airlines as staticAirlines,
@@ -16,7 +16,7 @@ import {
   assumptions as staticAssumptions,
   DATASET_VERSION,
 } from '../lib/data'
-import { formatMoney } from '../lib/format'
+import { formatDimensions, formatMoney } from '../lib/format'
 
 type ReferenceStatus = 'loading' | 'ready' | 'fallback' | 'error'
 type CalcStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -89,7 +89,7 @@ export default function Home() {
     setReferenceStatus('loading')
     setReferenceError(null)
 
-    fetchReference(controller.signal)
+    withRetry(() => fetchReference(controller.signal))
       .then((bundle) => {
         if (cancelled) return
         setReference({
@@ -257,26 +257,30 @@ export default function Home() {
     setBins((current) => ({ ...current, [bin]: { ...current[bin], emptyWeight: value } }))
   }, [])
 
-  const allowances = useMemo(
-    () => ({
-      personal: airline
-        ? {
-            length: airline.personal_item_length,
-            width: airline.personal_item_width,
-            height: airline.personal_item_height,
-          }
-        : undefined,
-      carry_on: airline
-        ? {
-            length: airline.carry_on_length,
-            width: airline.carry_on_width,
-            height: airline.carry_on_height,
-          }
-        : undefined,
-      checked: undefined,
-    }),
-    [airline],
-  )
+  const allowanceLabels = useMemo<Partial<Record<BagType, string | null>>>(() => {
+    if (!airline) return {}
+    const checkedParts = [
+      airline.checked_bag_linear_dim != null
+        ? `${airline.checked_bag_linear_dim} in total (length + width + height)`
+        : null,
+      airline.checked_bag_weight != null ? `${airline.checked_bag_weight} lb` : null,
+    ].filter(Boolean)
+
+    return {
+      personal: formatDimensions(
+        airline.personal_item_length,
+        airline.personal_item_width,
+        airline.personal_item_height,
+      ),
+      carry_on: [
+        formatDimensions(airline.carry_on_length, airline.carry_on_width, airline.carry_on_height),
+        airline.carry_on_weight != null ? `${airline.carry_on_weight} lb` : null,
+      ]
+        .filter(Boolean)
+        .join(', ') || null,
+      checked: checkedParts.length > 0 ? checkedParts.join(', ') : null,
+    }
+  }, [airline])
 
   const selectClass =
     'w-full bg-premium-900 border border-white/10 rounded-xl py-2.5 px-4 appearance-none text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary'
@@ -503,7 +507,7 @@ export default function Home() {
           onMoveItem={moveItem}
           onDimensionChange={changeDimension}
           onEmptyWeightChange={changeEmptyWeight}
-          allowances={allowances}
+          allowanceLabels={allowanceLabels}
         />
 
         <FeeAvoidanceTips result={result} airline={airline} />

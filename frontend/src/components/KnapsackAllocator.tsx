@@ -3,15 +3,18 @@ import { Backpack, ShieldAlert } from 'lucide-react'
 import type { BagType } from '../lib/api'
 import { BIN_LABELS, BIN_ORDER, binTotalWeight } from '../lib/bins'
 import type { BinDimensions, Bins } from '../lib/bins'
-import { formatDimensions } from '../lib/format'
 
 interface Props {
   bins: Bins
   onMoveItem: (itemId: string, from: BagType, to: BagType) => void
   onDimensionChange: (bin: BagType, axis: keyof BinDimensions, value: number | null) => void
   onEmptyWeightChange: (bin: BagType, value: number | null) => void
-  /** Airline allowances, for the "fits / does not fit" hint next to each bag. */
-  allowances: Partial<Record<BagType, BinDimensions>>
+  /**
+   * The airline's published allowance for each bag, already formatted.
+   * Checked bags are limited by a linear total rather than three sides, so this
+   * is a string per bag rather than a set of dimensions.
+   */
+  allowanceLabels: Partial<Record<BagType, string | null>>
 }
 
 /**
@@ -29,7 +32,7 @@ export default function KnapsackAllocator({
   onMoveItem,
   onDimensionChange,
   onEmptyWeightChange,
-  allowances,
+  allowanceLabels,
 }: Props) {
   const baseId = useId()
   const [dragging, setDragging] = useState<{ itemId: string; from: BagType } | null>(null)
@@ -60,12 +63,9 @@ export default function KnapsackAllocator({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {BIN_ORDER.map((binId) => {
           const bin = bins[binId]
-          const allowance = allowances[binId]
+          const allowanceText = allowanceLabels[binId]
           const total = binTotalWeight(bin)
           const hasMisplacedItem = bin.items.some((i) => i.tsa === 'checked_only') && binId !== 'checked'
-          const allowanceText = allowance
-            ? formatDimensions(allowance.length, allowance.width, allowance.height)
-            : null
 
           return (
             <div

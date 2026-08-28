@@ -269,7 +269,12 @@ export function renderHeadTags(meta: PageMeta): string {
     `<meta name="twitter:image" content="${OG_IMAGE}">`,
   ]
   for (const block of meta.jsonLd ?? []) {
-    tags.push(`<script type="application/ld+json">${escapeJsonLd(block)}</script>`)
+    // data-packright marks these as ours so SeoHead can clear them on a
+    // client-side route change. Without it the previous page's structured data
+    // would stay in the head and describe the wrong URL.
+    tags.push(
+      `<script type="application/ld+json" data-packright="true">${escapeJsonLd(block)}</script>`,
+    )
   }
   return tags.join('\n    ')
 }

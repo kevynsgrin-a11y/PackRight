@@ -29,9 +29,3 @@ export function fitsWithin(bag: Box, limit: Box): boolean | null {
   if (!a || !l) return null
   return a.every((value, i) => value <= l[i] + EPSILON)
 }
-
-/** Linear inches: length + width + height. Null when any side is missing. */
-export function linearInches(box: Box): number | null {
-  if (box.length == null || box.width == null || box.height == null) return null
-  return box.length + box.width + box.height
-}

@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && npm run build:client && npm run build:ssr && npm run prerender",
+    "build": "npm run typecheck && npm run build:client && npm run build:ssr && npm run prerender && npm run budget",
     "lint": "oxlint .",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "npm run typecheck && npm run lint",
     "build:client": "vite build",
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr",
-    "prerender": "node scripts/prerender.mjs"
+    "prerender": "node scripts/prerender.mjs",
+    "budget": "node scripts/check-budget.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
