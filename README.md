@@ -74,14 +74,17 @@ closed:
 | # | Item | Why it is still open |
 | - | ---- | -------------------- |
 | 1 | **Verify the dataset** | Every record in `data/reference-data.json` ships as `status: "unverified"` with `verified_at: null`. The figures were carried over from the initial MVP seed and have not been checked against the airline sources recorded beside them. The app shows "Review pending" everywhere until a steward checks each record and sets `verified_at` / `verified_by`. **Southwest's checked-bag allowance is the highest-priority record**: it is modelled as two free bags, which changed during 2025. |
-| 2 | **Create the mailboxes** | The policy pages publish `hello@luggageliason.com` and `privacy@luggageliason.com`. These addresses were chosen to match the domain and **must be created and monitored**, or the privacy rights channel does not exist. |
-| 3 | **Legal review** | `/privacy`, `/terms` and `/affiliate-disclosure` describe what the code actually does, verified against this repository. They have not been reviewed by counsel. |
-| 4 | **Confirm vendor settings** | The privacy page states Cloudflare Web Analytics is cookieless and does not fingerprint. Confirm the account's actual configuration and retention before publication. |
-| 5 | **HSTS preload** | `_headers` sends `preload`. Confirm every subdomain is HTTPS-ready before submitting to the preload list, because it is hard to reverse. |
-| 6 | **Watch the CSP** | The policy is strict with no `unsafe-inline`, validated against the built output (two script sources, one stylesheet, no fonts, no third-party images). Watch for breakage after enabling Cloudflare features that inject script, such as Rocket Loader. |
-| 7 | **Search Console / Bing** | Verify ownership, submit `sitemap.xml`, and request re-indexing of the home page so the "frontend" title is replaced. Needs account access. |
-| 8 | **Rate limiting** | `api/src/http.ts` enforces a per-isolate limit and emits accurate `RateLimit-*` headers, which is best effort because Workers isolates do not share memory. Enable the binding in `wrangler.toml` or a WAF rule for a durable account-wide limit. |
-| 9 | **Affiliate programme** | No partner links ship. `/affiliate-disclosure` sets the standard any future link must meet: a real destination, `rel="sponsored noopener noreferrer"`, and disclosure next to the link. |
+| 2 | **Legal review** | `/privacy`, `/terms` and `/affiliate-disclosure` describe what the code actually does, verified against this repository. They have not been reviewed by counsel. |
+| 3 | **Confirm vendor settings** | The privacy page states Cloudflare Web Analytics is cookieless and does not fingerprint. Confirm the account's actual configuration and retention before publication. |
+| 4 | **HSTS preload** | `_headers` sends `preload`. Confirm every subdomain is HTTPS-ready before submitting to the preload list, because it is hard to reverse. |
+| 5 | **Watch the CSP** | The policy is strict with no `unsafe-inline`, validated against the built output (two script sources, one stylesheet, no fonts, no third-party images). Watch for breakage after enabling Cloudflare features that inject script, such as Rocket Loader. |
+| 6 | **Search Console / Bing** | Verify ownership, submit `sitemap.xml`, and request re-indexing of the home page so the "frontend" title is replaced. Needs account access. |
+| 7 | **Rate limiting** | `api/src/http.ts` enforces a per-isolate limit and emits accurate `RateLimit-*` headers, which is best effort because Workers isolates do not share memory. Enable the binding in `wrangler.toml` or a WAF rule for a durable account-wide limit. |
+| 8 | **Affiliate programme** | No partner links ship. `/affiliate-disclosure` sets the standard any future link must meet: a real destination, `rel="sponsored noopener noreferrer"`, and disclosure next to the link. |
+
+`hello@luggageliason.com` and `privacy@luggageliason.com` are live and route to the
+owner's Google Workspace, so the contact and privacy-rights channels the policy pages
+publish are real.
 
 The audit's P2 items (a broader content library, a published data change log,
 and a final decision on whether the public brand is PackRight or Luggageliason)
