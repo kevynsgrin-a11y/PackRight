@@ -1,8 +1,28 @@
 name = "packright-api"
 main = "src/index.ts"
-compatibility_date = "2024-03-20"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Structured logs for the Workers Observability dashboard, so calculation
+# failures and the /api/v1/health probe are visible without a separate vendor.
+[observability]
+enabled = true
 
 [[d1_databases]]
 binding = "DB"
 database_name = "packright-db"
 database_id = "89c7150a-0077-4fd8-b3a2-8b4c59c4331e"
+
+# Durable, account-wide rate limiting.
+#
+# src/http.ts enforces a best-effort per-isolate limit and always emits
+# RateLimit-* headers. That bounds a single abusive client but is not a global
+# control, because Workers isolates do not share memory. Enable the binding
+# below (or an equivalent WAF rate-limiting rule) for the authoritative limit,
+# then wire env.RATE_LIMITER into the middleware in src/index.ts.
+#
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1001"
+# simple = { limit = 120, period = 60 }

@@ -1,0 +1,75 @@
+-- GENERATED FILE. Do not edit by hand.
+-- Source: data/reference-data.json
+-- Regenerate: cd api && npm run generate:seed
+-- Apply:      wrangler d1 execute packright-db --remote --file=./schema.sql
+--             wrangler d1 execute packright-db --remote --file=./seed.sql
+--
+-- Dataset version 1.0.0. Records marked 'unverified' have a source
+-- URL recorded but have NOT been confirmed against that source by a data steward.
+-- The application surfaces those as "Review pending" and suppresses savings claims.
+
+REPLACE INTO airlines (
+  id, slug, name, iata_code,
+  personal_item_length, personal_item_width, personal_item_height,
+  carry_on_length, carry_on_width, carry_on_height, carry_on_weight,
+  checked_bag_weight, checked_bag_linear_dim,
+  source_url, source_title, effective_date, verified_at, verified_by,
+  scope, currency, status, change_note, updated_at
+) VALUES
+  ('aa', 'american-airlines', 'American Airlines', 'AA', 18, 14, 8, 22, 14, 9, NULL, 50, 62, 'https://www.aa.com/i18n/travel-info/baggage/baggage.jsp', 'American Airlines - Baggage', NULL, NULL, NULL, 'US domestic, main-cabin economy', 'USD', 'unverified', 'Dimensions carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('dl', 'delta-air-lines', 'Delta Air Lines', 'DL', 18, 14, 8, 22, 14, 9, NULL, 50, 62, 'https://www.delta.com/us/en/baggage/overview', 'Delta Air Lines - Baggage Overview', NULL, NULL, NULL, 'US domestic, main-cabin economy', 'USD', 'unverified', 'Dimensions carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('ua', 'united-airlines', 'United Airlines', 'UA', 17, 10, 9, 22, 14, 9, NULL, 50, 62, 'https://www.united.com/en/us/fly/travel/baggage.html', 'United Airlines - Baggage', NULL, NULL, NULL, 'US domestic, main-cabin economy', 'USD', 'unverified', 'Dimensions carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('nk', 'spirit-airlines', 'Spirit Airlines', 'NK', 18, 14, 8, 22, 18, 10, 40, 40, 62, 'https://www.spirit.com/optional-services', 'Spirit Airlines - Optional Services and Bag Pricing', NULL, NULL, NULL, 'US domestic', 'USD', 'unverified', 'Dimensions carried over from the initial MVP seed. Not yet checked against the airline source. Spirit prices bags dynamically by route and purchase timing, so a single figure will always be an estimate.', datetime('now')),
+  ('f9', 'frontier-airlines', 'Frontier Airlines', 'F9', 18, 14, 8, 24, 16, 10, 35, 40, 62, 'https://www.flyfrontier.com/travel/travel-info/bag-options/', 'Frontier Airlines - Bag Options', NULL, NULL, NULL, 'US domestic', 'USD', 'unverified', 'Personal-item dimensions were stored as 14x18x8 in the initial MVP seed while every other airline used longest-to-shortest ordering. Normalised to 18x14x8 (same box, consistent ordering) so the fit check is not order-dependent. Not yet checked against the airline source. Frontier prices bags dynamically by route and purchase timing.', datetime('now')),
+  ('wn', 'southwest-airlines', 'Southwest Airlines', 'WN', 16.25, 13.5, 8, 24, 16, 10, NULL, 50, 62, 'https://www.southwest.com/help/baggage', 'Southwest Airlines - Baggage', NULL, NULL, NULL, 'US domestic', 'USD', 'unverified', 'Dimensions carried over from the initial MVP seed (16x13.5x8.5), reordered longest-to-shortest. Not yet checked against the airline source. Southwest''s checked-bag allowance changed during 2025 and this record is a priority for steward review.', datetime('now')),
+  ('as', 'alaska-airlines', 'Alaska Airlines', 'AS', 14, 11, 9, 22, 14, 9, NULL, 50, 62, 'https://www.alaskaair.com/content/travel-info/baggage/overview', 'Alaska Airlines - Baggage Overview', NULL, NULL, NULL, 'US domestic, main-cabin economy', 'USD', 'unverified', 'Dimensions carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('b6', 'jetblue-airways', 'JetBlue Airways', 'B6', 17, 13, 8, 22, 14, 9, NULL, 50, 62, 'https://www.jetblue.com/help/baggage', 'JetBlue - Baggage', NULL, NULL, NULL, 'US domestic, main-cabin economy', 'USD', 'unverified', 'Dimensions carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now'));
+
+REPLACE INTO fare_families (
+  id, airline_id, name, includes_personal_item, includes_carry_on,
+  first_checked_fee, second_checked_fee, third_plus_checked_fee, carry_on_fee,
+  source_url, source_title, effective_date, verified_at, verified_by,
+  scope, currency, status, change_note, updated_at
+) VALUES
+  ('aa-basic', 'aa', 'Basic Economy', 1, 1, 40, 45, NULL, NULL, 'https://www.aa.com/i18n/travel-info/baggage/baggage.jsp', 'American Airlines - Baggage', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('aa-main', 'aa', 'Main Cabin', 1, 1, 40, 45, NULL, NULL, 'https://www.aa.com/i18n/travel-info/baggage/baggage.jsp', 'American Airlines - Baggage', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('dl-basic', 'dl', 'Basic Economy', 1, 1, 35, 45, NULL, NULL, 'https://www.delta.com/us/en/baggage/overview', 'Delta Air Lines - Baggage Overview', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('dl-main', 'dl', 'Main Cabin', 1, 1, 35, 45, NULL, NULL, 'https://www.delta.com/us/en/baggage/overview', 'Delta Air Lines - Baggage Overview', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('ua-basic', 'ua', 'Basic Economy', 1, 0, 40, 50, NULL, NULL, 'https://www.united.com/en/us/fly/travel/baggage.html', 'United Airlines - Baggage', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source. No published carry-on fee is modelled, so a carry-on on this fare is reported as unpriced rather than guessed.', datetime('now')),
+  ('ua-main', 'ua', 'Main Cabin', 1, 1, 40, 50, NULL, NULL, 'https://www.united.com/en/us/fly/travel/baggage.html', 'United Airlines - Baggage', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('nk-standard', 'nk', 'Standard', 1, 0, 59, 79, NULL, NULL, 'https://www.spirit.com/optional-services', 'Spirit Airlines - Optional Services and Bag Pricing', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Spirit prices bags dynamically by route and purchase timing, so any single figure is an estimate. Not yet checked against the airline source.', datetime('now')),
+  ('f9-standard', 'f9', 'Standard', 1, 0, 65, 85, NULL, NULL, 'https://www.flyfrontier.com/travel/travel-info/bag-options/', 'Frontier Airlines - Bag Options', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Frontier prices bags dynamically by route and purchase timing, so any single figure is an estimate. Not yet checked against the airline source.', datetime('now')),
+  ('wn-wanna', 'wn', 'Wanna Get Away', 1, 1, 0, 0, NULL, NULL, 'https://www.southwest.com/help/baggage', 'Southwest Airlines - Baggage', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Carried over from the initial MVP seed, which modelled two free checked bags. Southwest''s checked-bag allowance changed during 2025, so this record is the highest-priority item for steward review and should not be presented as current.', datetime('now')),
+  ('as-saver', 'as', 'Saver', 1, 1, 35, 45, NULL, NULL, 'https://www.alaskaair.com/content/travel-info/baggage/overview', 'Alaska Airlines - Baggage Overview', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('as-main', 'as', 'Main', 1, 1, 35, 45, NULL, NULL, 'https://www.alaskaair.com/content/travel-info/baggage/overview', 'Alaska Airlines - Baggage Overview', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('b6-bluebasic', 'b6', 'Blue Basic', 1, 0, 35, 50, NULL, NULL, 'https://www.jetblue.com/help/baggage', 'JetBlue - Baggage', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now')),
+  ('b6-blue', 'b6', 'Blue', 1, 1, 35, 50, NULL, NULL, 'https://www.jetblue.com/help/baggage', 'JetBlue - Baggage', NULL, NULL, NULL, 'US domestic, one-way, per passenger', 'USD', 'unverified', 'Fees carried over from the initial MVP seed. Not yet checked against the airline source.', datetime('now'));
+
+REPLACE INTO benefits (
+  id, name, airline_id, benefit_type, tier,
+  waives_first_checked, waives_second_checked, waives_carry_on, companion_limit,
+  source_url, source_title, effective_date, verified_at, verified_by,
+  scope, currency, status, change_note, updated_at
+) VALUES
+  ('aa-citi', 'Citi / AAdvantage Platinum Select', 'aa', 'CREDIT_CARD', NULL, 1, 0, 0, 4, 'https://www.aa.com/i18n/aadvantage-program/aadvantage-credit-cards/aadvantage-credit-cards.jsp', 'American Airlines - AAdvantage credit cards', NULL, NULL, NULL, 'US domestic, primary cardholder on the same reservation', 'USD', 'unverified', 'Carried over from the initial MVP seed. Card benefit terms change and are set by the issuer, not the airline. Not yet checked against the issuer source.', datetime('now')),
+  ('dl-gold', 'Delta SkyMiles Gold American Express', 'dl', 'CREDIT_CARD', NULL, 1, 0, 0, 8, 'https://www.delta.com/us/en/skymiles/credit-cards/overview', 'Delta - SkyMiles credit cards', NULL, NULL, NULL, 'US domestic, primary cardholder on the same reservation', 'USD', 'unverified', 'Carried over from the initial MVP seed. Card benefit terms change and are set by the issuer, not the airline. Not yet checked against the issuer source.', datetime('now')),
+  ('ua-explorer', 'United Explorer Card', 'ua', 'CREDIT_CARD', NULL, 1, 0, 1, 1, 'https://www.united.com/en/us/fly/mileageplus/credit-cards.html', 'United - MileagePlus credit cards', NULL, NULL, NULL, 'US domestic, primary cardholder on the same reservation', 'USD', 'unverified', 'Carried over from the initial MVP seed, including the carry-on waiver flag used for Basic Economy. Card benefit terms change and are set by the issuer. Not yet checked against the issuer source.', datetime('now')),
+  ('as-visa', 'Alaska Airlines Visa Signature', 'as', 'CREDIT_CARD', NULL, 1, 0, 0, 6, 'https://www.alaskaair.com/content/credit-card', 'Alaska Airlines - Visa Signature card', NULL, NULL, NULL, 'US domestic, primary cardholder on the same reservation', 'USD', 'unverified', 'Carried over from the initial MVP seed. Card benefit terms change and are set by the issuer, not the airline. Not yet checked against the issuer source.', datetime('now')),
+  ('b6-plus', 'JetBlue Plus Card', 'b6', 'CREDIT_CARD', NULL, 1, 0, 0, 3, 'https://www.jetblue.com/jetblue-card', 'JetBlue - JetBlue credit cards', NULL, NULL, NULL, 'US domestic, primary cardholder on the same reservation', 'USD', 'unverified', 'Carried over from the initial MVP seed. Card benefit terms change and are set by the issuer, not the airline. Not yet checked against the issuer source.', datetime('now'));
+
+REPLACE INTO tsa_rules (
+  id, item_name, category, allowed_carry_on, allowed_checked, notes,
+  source_url, source_title, verified_at, verified_by, status, change_note, updated_at
+) VALUES
+  ('liquids', 'Liquids over 3.4 oz (100 ml)', 'Liquids', 0, 1, 'Containers in a carry-on must be 3.4 oz (100 ml) or smaller and fit in one quart-sized bag.', 'https://www.tsa.gov/travel/security-screening/whatcanibring/all', 'TSA - What Can I Bring?', NULL, NULL, 'unverified', 'Carried over from the initial MVP seed. Not yet checked against the TSA source.', datetime('now')),
+  ('lithium', 'Spare lithium batteries', 'Electronics', 1, 0, 'Spare batteries must travel in a carry-on and be protected against short circuit.', 'https://www.tsa.gov/travel/security-screening/whatcanibring/all', 'TSA - What Can I Bring?', NULL, NULL, 'unverified', 'Carried over from the initial MVP seed. Watt-hour limits and airline approval rules were not modelled. Not yet checked against the TSA or FAA source.', datetime('now')),
+  ('firearms', 'Firearms', 'Weapons', 0, 1, 'Must be unloaded, locked in a hard-sided case, and declared to the airline at check-in.', 'https://www.tsa.gov/travel/transporting-firearms-and-ammunition', 'TSA - Transporting Firearms and Ammunition', NULL, NULL, 'unverified', 'Carried over from the initial MVP seed. State and local law may add requirements that are not modelled. Not yet checked against the TSA source.', datetime('now')),
+  ('knives', 'Knives', 'Sharp objects', 0, 1, 'Plastic and round-bladed butter knives are the exception and may travel in a carry-on.', 'https://www.tsa.gov/travel/security-screening/whatcanibring/all', 'TSA - What Can I Bring?', NULL, NULL, 'unverified', 'Carried over from the initial MVP seed. Not yet checked against the TSA source.', datetime('now'));
+
+REPLACE INTO fee_assumptions (
+  id, label, amount, currency, status, verified_at, verified_by, change_note, updated_at
+) VALUES
+  ('oversize-personal-item', 'Oversized personal item', 100, 'USD', 'assumption', NULL, NULL, 'Placeholder retained from the initial MVP build. Airlines do not publish a single flat oversize charge for personal items; the real outcome is usually gate-checking at that airline''s carry-on or checked-bag rate. Displayed as a planning assumption only.', datetime('now')),
+  ('gate-oversize-carry-on', 'Carry-on too large at the gate', 100, 'USD', 'assumption', NULL, NULL, 'Placeholder retained from the initial MVP build. Gate-check outcomes vary by airline, fare and airport. Displayed as a planning assumption only.', datetime('now')),
+  ('overweight-checked', 'Checked bag over the weight limit', 100, 'USD', 'assumption', NULL, NULL, 'Placeholder retained from the initial MVP build. Real overweight charges are banded (for example 51-70 lb and 71-100 lb) and differ per airline. Displayed as a planning assumption only.', datetime('now')),
+  ('excess-checked-3plus', 'Third and each additional checked bag', 150, 'USD', 'assumption', NULL, NULL, 'Placeholder retained from the initial MVP build. Displayed as a planning assumption only.', datetime('now'));
