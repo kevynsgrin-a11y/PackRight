@@ -64,7 +64,7 @@ export default function PersonalItemComparison() {
       className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${
         sortKey === value
           ? 'border-accent-primary/50 bg-accent-primary/15 text-white'
-          : 'border-white/10 text-text-muted hover:text-white'
+          : 'border-white/25 text-text-muted hover:text-white'
       }`}
     >
       <ArrowUpDown className="w-3.5 h-3.5" aria-hidden="true" />

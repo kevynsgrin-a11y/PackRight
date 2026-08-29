@@ -64,9 +64,15 @@ const outputPathFor = (route) => {
 
 async function writeRoute(meta) {
   const { html, head } = render(meta.path === '/404' ? '/404' : meta.path)
+  // Replacer FUNCTIONS, not strings. String.replace interprets $$, $&, $` and
+  // $' in the replacement, so any of those sequences in rendered content --
+  // a change note, a fare name, an airline's own copy -- would splice part of
+  // the template back into the output. The head is the worse half: seo.ts's
+  // escapeHtml leaves ' and ` alone, so a $` in a title would inject the whole
+  // document prefix into the <head>.
   const document = template
-    .replace(SEO_BLOCK, `<!--seo:start-->\n    ${head}\n    <!--seo:end-->`)
-    .replace(APP_HTML, html)
+    .replace(SEO_BLOCK, () => `<!--seo:start-->\n    ${head}\n    <!--seo:end-->`)
+    .replace(APP_HTML, () => html)
 
   const outPath = outputPathFor(meta.path)
   await mkdir(dirname(outPath), { recursive: true })
@@ -120,8 +126,8 @@ const precache = [
 const buildId = `${lastmod}-${Date.now().toString(36)}`
 const swTemplate = await readFile(join(here, 'sw-template.js'), 'utf8')
 const sw = swTemplate
-  .replace('__BUILD_ID__', buildId)
-  .replace('__PRECACHE_LIST__', JSON.stringify(precache, null, 2))
+  .replace('__BUILD_ID__', () => buildId)
+  .replace('__PRECACHE_LIST__', () => JSON.stringify(precache, null, 2))
 
 await writeFile(join(distDir, 'sw.js'), sw)
 console.log(`Wrote sw.js (build ${buildId}) precaching ${precache.length} files.`)

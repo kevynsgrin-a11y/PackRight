@@ -91,7 +91,7 @@ function Footer() {
             Fee estimates are not a quote. Airline size, weight and fee rules can change without
             notice. Confirm your allowance and final price with the airline before travel.
           </p>
-          <p>&copy; {new Date().getFullYear()} PackRight. All rights reserved.</p>
+          <p>&copy; {__BUILD_YEAR__} PackRight. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -30,6 +30,17 @@ function seoHeadPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), seoHeadPlugin()],
+  define: {
+    /*
+     * The footer used to call new Date().getFullYear() during render. The SSR
+     * pass and the browser evaluate that at different moments, so on New Year's
+     * Eve the prerendered HTML and the hydrated tree disagree on one text node
+     * -- and, more mundanely, a page built in December keeps claiming the wrong
+     * year all through January until something else triggers a rebuild.
+     * Stamped once, at build time, for both the client and SSR builds.
+     */
+    __BUILD_YEAR__: JSON.stringify(String(new Date().getFullYear())),
+  },
   server: {
     fs: {
       // data/reference-data.json lives above the Vite root.

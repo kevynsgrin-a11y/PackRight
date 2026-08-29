@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useId, useLayoutEffect, useState } from 'react'
 import { Backpack, ShieldAlert } from 'lucide-react'
 import type { BagType } from '../lib/api'
 import { BIN_LABELS, BIN_ORDER, binTotalWeight } from '../lib/bins'
@@ -38,6 +38,36 @@ export default function KnapsackAllocator({
   const [dragging, setDragging] = useState<{ itemId: string; from: BagType } | null>(null)
   const [dragOver, setDragOver] = useState<BagType | null>(null)
 
+  // The destination each item's select is currently *pointing at*, which is not
+  // the same as where it has been moved. Committing on change violated WCAG
+  // 3.2.2: arrowing through a native select fires change on every option, so a
+  // keyboard user could not read the choices without executing each one.
+  const [targets, setTargets] = useState<Record<string, BagType>>({})
+  const [focusItemId, setFocusItemId] = useState<string | null>(null)
+
+  // A move unmounts the item's <li> from one column and mounts a new one in
+  // another, so activeElement falls back to <body> and the keyboard user loses
+  // their place entirely. The select id is stable across bins, so the
+  // equivalent control in the destination can be found and focused once the
+  // new bins have rendered.
+  useLayoutEffect(() => {
+    if (!focusItemId) return
+    document.getElementById(`${baseId}-move-${focusItemId}`)?.focus()
+    setFocusItemId(null)
+  }, [bins, focusItemId, baseId])
+
+  const commitMove = (itemId: string, from: BagType) => {
+    const to = targets[itemId] ?? from
+    if (to === from) return
+    setTargets((current) => {
+      const next = { ...current }
+      delete next[itemId]
+      return next
+    })
+    setFocusItemId(itemId)
+    onMoveItem(itemId, from, to)
+  }
+
   const handleDrop = (to: BagType) => {
     if (dragging && dragging.from !== to) onMoveItem(dragging.itemId, dragging.from, to)
     setDragging(null)
@@ -56,8 +86,9 @@ export default function KnapsackAllocator({
       </div>
       <p className="text-sm text-text-muted mb-6">
         Move items between bags to see how the estimate changes. Drag with a mouse, or use each
-        item&rsquo;s <span className="text-white">Move to</span> control. Add your bag&rsquo;s
-        measurements to check it against the airline allowance.
+        item&rsquo;s <span className="text-white">Move to</span> control and its{' '}
+        <span className="text-white">Move</span> button. Add your bag&rsquo;s measurements to check
+        it against the airline allowance.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -95,6 +126,7 @@ export default function KnapsackAllocator({
                 {bin.items.map((item) => {
                   const misplaced = item.tsa === 'checked_only' && binId !== 'checked'
                   const selectId = `${baseId}-move-${item.id}`
+                  const target = targets[item.id] ?? binId
                   return (
                     <li
                       key={item.id}
@@ -116,18 +148,54 @@ export default function KnapsackAllocator({
                       <label htmlFor={selectId} className="sr-only">
                         Move {item.spokenName} to another bag
                       </label>
-                      <select
-                        id={selectId}
-                        value={binId}
-                        onChange={(e) => onMoveItem(item.id, binId, e.target.value as BagType)}
-                        className="w-full bg-premium-900 border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-                      >
-                        {BIN_ORDER.map((target) => (
-                          <option key={target} value={target}>
-                            {target === binId ? `In ${BIN_LABELS[target].toLowerCase()}` : `Move to ${BIN_LABELS[target].toLowerCase()}`}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex gap-2">
+                        <select
+                          id={selectId}
+                          value={target}
+                          onChange={(e) =>
+                            setTargets((current) => ({
+                              ...current,
+                              [item.id]: e.target.value as BagType,
+                            }))
+                          }
+                          className="min-w-0 grow bg-premium-900 border border-white/25 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                        >
+                          {BIN_ORDER.map((option) => (
+                            <option key={option} value={option}>
+                              {option === binId
+                                ? `In ${BIN_LABELS[option].toLowerCase()}`
+                                : `Move to ${BIN_LABELS[option].toLowerCase()}`}
+                            </option>
+                          ))}
+                        </select>
+                        {/*
+                          aria-disabled rather than disabled. A disabled button
+                          is removed from the tab order, so a screen-reader user
+                          tabbing through would never learn the Move button
+                          exists until after changing the select -- and the
+                          select is exactly where they would have expected the
+                          move to happen. Kept focusable and announced; the
+                          click is a no-op because commitMove returns early when
+                          the destination is the current bag.
+                        */}
+                        <button
+                          type="button"
+                          aria-disabled={target === binId}
+                          onClick={() => commitMove(item.id, binId)}
+                          className={`shrink-0 bg-premium-700 border border-white/25 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary ${
+                            target === binId ? 'cursor-not-allowed text-white/70' : 'hover:bg-premium-600'
+                          }`}
+                        >
+                          Move
+                          <span className="sr-only">
+                            {' '}
+                            {item.spokenName}
+                            {target === binId
+                              ? ' — choose a destination first'
+                              : ` to ${BIN_LABELS[target].toLowerCase()}`}
+                          </span>
+                        </button>
+                      </div>
                     </li>
                   )
                 })}
@@ -185,7 +253,7 @@ export default function KnapsackAllocator({
                           onChange={(e) =>
                             onDimensionChange(binId, axis, e.target.value === '' ? null : Number(e.target.value))
                           }
-                          className="w-full bg-premium-900 border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                          className="w-full bg-premium-900 border border-white/25 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
                         />
                       </div>
                     )
@@ -212,7 +280,7 @@ export default function KnapsackAllocator({
                     onChange={(e) =>
                       onEmptyWeightChange(binId, e.target.value === '' ? null : Number(e.target.value))
                     }
-                    className="w-full bg-premium-900 border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                    className="w-full bg-premium-900 border border-white/25 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
                   />
                 </div>
               </fieldset>

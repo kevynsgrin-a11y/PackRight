@@ -95,7 +95,7 @@ export default function CarryOnSizeChecker() {
                       [axis]: e.target.value === '' ? null : Number(e.target.value),
                     }))
                   }
-                  className="w-full bg-premium-900 border border-white/10 rounded-xl py-2 px-3 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  className="w-full bg-premium-900 border border-white/25 rounded-xl py-2 px-3 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
                 />
               </div>
             )
