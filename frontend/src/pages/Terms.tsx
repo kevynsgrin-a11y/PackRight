@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PageHeader, Prose } from '../components/Page'
 import { CONTACT_EMAIL } from '../lib/seo'
-import { LAST_UPDATED } from '../lib/site'
+import { LAST_UPDATED, LEGAL_ENTITY, MAILING_ADDRESS_LINE, OPERATING_STATE } from '../lib/site'
 
 export default function Terms() {
   return (
@@ -13,6 +13,14 @@ export default function Terms() {
       />
 
       <Prose>
+        <h2 id="who-we-are">Who you are agreeing with</h2>
+        <p>
+          PackRight and Luggageliason.com are operated by <strong>{LEGAL_ENTITY}</strong>
+          (&ldquo;we&rdquo;, &ldquo;us&rdquo;), a limited liability company based in{' '}
+          {OPERATING_STATE}, at {MAILING_ADDRESS_LINE}. By using the site you agree to these terms.
+          If you do not agree, please do not use it.
+        </p>
+
         <h2 id="estimates">Estimates are not quotes</h2>
         <p className="text-white">
           The airline&rsquo;s booking flow and published contract of carriage control if a PackRight
@@ -54,6 +62,25 @@ export default function Terms() {
           We link to airline and issuer policy pages so you can verify our figures. We do not control
           those sites and are not responsible for their content. Any commercial relationship would be
           disclosed under our <Link to="/affiliate-disclosure">affiliate disclosure</Link>.
+        </p>
+
+        <h2 id="governing-law">Governing law and disputes</h2>
+        <p>
+          These terms are governed by the laws of the State of {OPERATING_STATE}, without regard to
+          its conflict-of-laws rules. You and {LEGAL_ENTITY} agree that any dispute arising out of
+          or relating to these terms or the site will be brought exclusively in the state or
+          federal courts located in Sacramento County, {OPERATING_STATE}, and both parties consent
+          to the personal jurisdiction of those courts.
+        </p>
+        <p>
+          If any provision of these terms is held unenforceable, the rest remain in force. Our
+          failure to enforce a provision is not a waiver of it.
+        </p>
+
+        <h2 id="notices">Notices</h2>
+        <p>
+          Send legal notices to {LEGAL_ENTITY}, {MAILING_ADDRESS_LINE}, or by email to{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
         </p>
 
         <h2 id="changes">Changes</h2>

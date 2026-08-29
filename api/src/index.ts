@@ -79,6 +79,18 @@ app.use('*', async (c: Context, next: Next) => {
   c.header('X-API-Version', API_VERSION)
 
   if (!rate.allowed) {
+    // Build the headers with Headers.set rather than an object literal. Spreading
+    // c.res.headers yields lowercase names ('cache-control'), so a literal
+    // 'Cache-Control' alongside it is a DIFFERENT object key and both survived
+    // into the Headers constructor, producing
+    //   cache-control: public, max-age=3600, no-store
+    //   content-type: application/json, application/json
+    // on every 429. A cache reading the first directive could store the 429.
+    const headers = new Headers(c.res.headers)
+    headers.set('Content-Type', 'application/json')
+    headers.set('Retry-After', String(rate.resetSeconds))
+    headers.set('Cache-Control', 'no-store')
+
     c.res = new Response(
       JSON.stringify({
         error: {
@@ -86,15 +98,7 @@ app.use('*', async (c: Context, next: Next) => {
           message: 'Too many requests. Please retry shortly.',
         },
       }),
-      {
-        status: 429,
-        headers: {
-          ...Object.fromEntries(c.res.headers),
-          'Content-Type': 'application/json',
-          'Retry-After': String(rate.resetSeconds),
-          'Cache-Control': 'no-store',
-        },
-      },
+      { status: 429, headers },
     )
   }
 })

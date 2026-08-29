@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PageHeader, Prose } from '../components/Page'
 import { CONTACT_EMAIL } from '../lib/seo'
-import { LAST_UPDATED } from '../lib/site'
+import { LAST_UPDATED, LEGAL_ENTITY } from '../lib/site'
 
 export default function AffiliateDisclosure() {
   return (
@@ -15,7 +15,8 @@ export default function AffiliateDisclosure() {
       <Prose>
         <h2 id="today">What is running today</h2>
         <p className="text-white">
-          PackRight currently carries no affiliate links, no sponsored placements and no advertising.
+          PackRight, operated by {LEGAL_ENTITY}, currently carries no affiliate links, no sponsored
+          placements and no advertising.
         </p>
         <p>
           An earlier build of this site showed product and shipping recommendation cards whose links

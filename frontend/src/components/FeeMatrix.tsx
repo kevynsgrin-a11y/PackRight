@@ -50,7 +50,7 @@ function BagRow({ bag }: { bag: BagLine }) {
                   </span>
                 ) : null}
                 {component.note ? (
-                  <span className="block opacity-80 mt-0.5 max-w-prose">{component.note}</span>
+                  <span className="block mt-0.5 max-w-prose">{component.note}</span>
                 ) : null}
               </span>
               <span className="text-text-muted shrink-0">
@@ -186,7 +186,9 @@ export default function FeeMatrix({ result }: { result: CalculationResult | null
                       source_url: source.url,
                       source_title: source.title,
                       verified_at: source.verified_at,
-                      status: source.verified_at ? 'verified' : 'unverified',
+                      // The API's real status. Deriving it from the date badged
+                      // never-verified records as "Verified".
+                      status: source.status ?? 'unverified',
                     }}
                   />
                 </li>
@@ -204,7 +206,7 @@ export default function FeeMatrix({ result }: { result: CalculationResult | null
         */}
         <div className="bg-accent-primary/10 border border-accent-primary/20 rounded-xl p-4 flex gap-3">
           <Info className="w-5 h-5 text-accent-primary shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="text-sm text-accent-primary/90">
+          <p className="text-sm text-violet-200">
             {result.disclaimer ??
               'Airline size, weight, and fee rules can change without notice. PackRight provides an estimate based on the sources and assumptions shown here; confirm your allowance and final price with the airline before travel.'}{' '}
             <Link to="/methodology" className="underline underline-offset-2 hover:text-white">

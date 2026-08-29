@@ -6,5 +6,26 @@
 # prerendered to its own HTML file by scripts/prerender.mjs, so Pages serves
 # real documents for known paths and 404.html with a 404 status for the rest.
 
-# One canonical hostname. The audit found www did not resolve.
-https://www.luggageliason.com/* https://luggageliason.com/:splat 301!
+# NOTE ON www CANONICALISATION
+#
+# There is deliberately no www rule here. A previous revision carried
+#   https://www.luggageliason.com/* https://luggageliason.com/:splat 301!
+# which never fired, for three separate reasons:
+#
+#   1. Cloudflare Pages _redirects matches on PATH only. An absolute URL with a
+#      scheme and hostname in the source position is not supported, so the rule
+#      was inert.
+#   2. The trailing "!" force marker is Netlify syntax, not Cloudflare's.
+#   3. There is no www DNS record on the zone at all, so nothing ever reaches
+#      Pages under that hostname in the first place.
+#
+# A rule that looks like a canonicalisation policy but does nothing is worse
+# than no rule, so it is gone. To actually canonicalise www:
+#
+#   a. Add a proxied CNAME for www pointing at the Pages project, AND
+#   b. add www.luggageliason.com as a custom domain on that project, THEN
+#   c. create a Redirect Rule in the dashboard (Rules > Redirect Rules)
+#      matching hostname eq "www.luggageliason.com" -> https://luggageliason.com
+#      preserving path and query, 301.
+#
+# See docs/owner-action-checklist.md item 6.

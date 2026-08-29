@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PackRight — Owner Action Checklist</title>
+<style>
+  @page { size: Letter; margin: 14mm 13mm 16mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; font: 10.5pt/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #16181d; background: #fff;
+  }
+  h1 { font-size: 21pt; margin: 0 0 2mm; letter-spacing: -0.4pt; }
+  .sub { color: #5b6472; font-size: 10pt; margin: 0 0 1mm; }
+  .rule { height: 3px; background: linear-gradient(90deg, #7c3aed, #0ea5e9); border-radius: 2px; margin: 4mm 0 5mm; }
+
+  h2 {
+    font-size: 12.5pt; margin: 7mm 0 3mm; padding-bottom: 1.5mm;
+    border-bottom: 1.5px solid #d7dbe2; letter-spacing: -0.2pt;
+    break-after: avoid;
+  }
+  h2 .tag {
+    font-size: 8pt; font-weight: 700; letter-spacing: .6pt; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 3px; vertical-align: 2px; margin-right: 6px;
+  }
+  .t-block { background: #fdecec; color: #a3161b; }
+  .t-trust { background: #fdf1dc; color: #8a5a06; }
+  .t-config { background: #e8eefc; color: #1d4ed8; }
+  .t-search { background: #e7f6ee; color: #10693c; }
+  .t-later  { background: #eef0f3; color: #4a5261; }
+
+  .item { break-inside: avoid; margin: 0 0 4mm; padding-left: 8mm; position: relative; }
+  .item .box {
+    position: absolute; left: 0; top: 0.6mm; width: 4.6mm; height: 4.6mm;
+    border: 1.4px solid #8d95a3; border-radius: 1px;
+  }
+  .item h3 { font-size: 10.5pt; margin: 0 0 1mm; font-weight: 700; }
+  .item h3 .mins { font-weight: 400; color: #6b7280; font-size: 8.5pt; }
+  .item p { margin: 0 0 1.5mm; }
+  .why { color: #4a5261; }
+  code, pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.6pt;
+  }
+  code { background: #f0f2f5; padding: 0.5px 3px; border-radius: 2px; }
+  pre {
+    background: #14161b; color: #e6e9ef; padding: 2.5mm 3mm; border-radius: 3px;
+    margin: 1.5mm 0; white-space: pre-wrap; word-break: break-word; line-height: 1.45;
+  }
+  pre .c { color: #8b95a6; }
+  .flag {
+    border-left: 3px solid #d97706; background: #fffbf3;
+    padding: 2mm 3mm; margin: 1.5mm 0; font-size: 9.6pt;
+  }
+  .flag.stop { border-left-color: #dc2626; background: #fff5f5; }
+
+  .done { background: #f6f8fa; border: 1px solid #e2e6ec; border-radius: 4px; padding: 3mm 4mm; margin-bottom: 2mm; }
+  .done ul { margin: 1mm 0 0; padding-left: 4.5mm; }
+  .done li { margin-bottom: 0.8mm; }
+  .done strong { font-weight: 700; }
+
+  table.meta { width: 100%; border-collapse: collapse; font-size: 9.3pt; margin-bottom: 1mm; }
+  table.meta td { padding: 1mm 0; vertical-align: top; }
+  table.meta td:first-child { color: #6b7280; width: 34mm; }
+
+  footer {
+    position: fixed; bottom: 6mm; left: 0; right: 0;
+    font-size: 8pt; color: #8b95a6; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>PackRight &mdash; Owner Action Checklist</h1>
+<p class="sub">luggageliason.com &middot; everything the August 2026 audit still needs that could not be completed in code</p>
+<table class="meta">
+  <tr><td>Prepared</td><td>29 August 2026</td></tr>
+  <tr><td>Operator</td><td>Oak and Main Developers LLC &middot; 2108 N St., Sacramento, CA 95816</td></tr>
+  <tr><td>Repository</td><td>kevynsgrin-a11y/PackRight &middot; branch <code>claude/site-hardening-pass-2</code></td></tr>
+  <tr><td>Cloudflare zone</td><td>luggageliason.com &middot; active, Free plan</td></tr>
+</table>
+<div class="rule"></div>
+
+<div class="done">
+  <strong>Already done, no action needed.</strong>
+  <ul>
+    <li>All P0 (01&ndash;08) and P1 (09&ndash;17) audit issues closed in code, merged to <code>main</code>, CI green.</li>
+    <li><strong>Production database migrated.</strong> <code>packright-db</code> now carries the full provenance schema &mdash; 8 airlines with slugs and source URLs, 13 fare families, 5 benefits, 4 TSA rules, 4 labelled assumptions, and the change-log table. Rehearsed against a schema replica first, which caught a defect that would have silently wiped benefit provenance.</li>
+    <li><strong>Accessibility:</strong> zero axe-core violations across 13 routes and 5 error/warning states. 24 keyboard stops, none unnamed, all with a visible focus ring. No horizontal overflow at 320/390/768/1440&nbsp;px.</li>
+    <li><strong>Security headers verified</strong> as actually served, with the CSP proven not to block anything the real pages load. Service worker verified: installs, works offline, and correctly refuses to serve a cached API response.</li>
+    <li>Legal entity, postal address, California governing law and a Do&nbsp;Not&nbsp;Track statement added to the policy pages.</li>
+    <li><strong>A second, adversarial audit</strong> across 12 dimensions found and fixed further defects, including a
+    regression where the UI rebuilt a green &ldquo;Verified&rdquo; badge from a date for records the API had marked
+    unverified, a malformed <code>Cache-Control</code> on every rate-limit response, a render crash that blanked the page on a
+    malformed API body, a CI lint gate that could never fail, and a fabricated Southwest dimension in my own dataset.</li>
+  </ul>
+</div>
+
+<h2><span class="tag t-block">Blockers</span>Nothing is live until these are done</h2>
+
+<div class="item"><span class="box"></span>
+  <h3>1. Find out what is actually serving the site <span class="mins">&mdash; 10 min, do this first</span></h3>
+  <div class="flag stop"><strong>Unresolved.</strong> The apex DNS record for <code>luggageliason.com</code> is a proxied CNAME to
+  <code>packright-6zl.pages.dev</code>, but <strong>no Pages project by that name exists</strong> in your Cloudflare account
+  (I checked all 10). Either it was deleted, renamed, or lives somewhere I cannot see. I could not load the site to check,
+  because this environment blocks outbound web access.</div>
+  <p class="why">This decides where the new frontend gets deployed, so resolve it before anything else. Open the Cloudflare
+  dashboard &rarr; Workers &amp; Pages and look for the project behind that hostname. If it is gone, create a new Pages project,
+  then repoint the apex CNAME at its <code>*.pages.dev</code> subdomain and add <code>luggageliason.com</code> as a custom domain.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>2. Deploy the API Worker <span class="mins">&mdash; 5 min</span></h3>
+  <p class="why">The deployed Worker is still the pre-audit build from 31 July. The database is already migrated and is
+  backward compatible, so the old Worker keeps serving until you replace it &mdash; there is no rush window and no downtime.
+  I could not do this myself: <code>wrangler</code> is not authenticated in my environment.</p>
+  <pre><span class="c"># from the repo root</span>
+cd api
+npx wrangler login
+npm run deploy   <span class="c"># runs typecheck + 40 tests, then deploys</span>
+
+<span class="c"># confirm it is live and reporting data freshness</span>
+curl -s https://packright-api.kevynsgrin.workers.dev/api/v1/health</pre>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>3. Deploy the frontend <span class="mins">&mdash; 10 min</span></h3>
+  <p class="why">Once item 1 tells you the project name. The build produces 19 prerendered HTML files plus a sitemap and
+  service worker.</p>
+  <pre>cd frontend
+npm ci &amp;&amp; npm run build
+npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
+  <div class="flag"><code>public/_headers</code> and <code>public/_redirects</code> are <strong>Cloudflare Pages specific</strong>.
+  Every security header and the one-year asset cache only take effect on Pages. On any other host they are
+  inert files and the site ships with none of that protection.</div>
+</div>
+
+<h2><span class="tag t-trust">Trust</span>Required before you drive traffic</h2>
+
+<div class="item"><span class="box"></span>
+  <h3>4. Verify the airline dataset <span class="mins">&mdash; the big one</span></h3>
+  <p class="why">Every record ships <code>status: "unverified"</code> with <code>verified_at: null</code>, so the site shows
+  &ldquo;Review pending&rdquo; everywhere. That is deliberate and honest &mdash; the figures were carried over from the original
+  build and have never been checked against the airlines. Use the two Gemini deep-research prompts I gave you; the second one
+  ends with a JSON block shaped to drop straight into <code>data/reference-data.json</code>.</p>
+  <div class="flag"><strong>Southwest is the priority.</strong> It is modelled as two free checked bags, which changed during
+  2025. Anyone planning a Southwest trip on the current data gets a materially wrong answer.</div>
+  <p class="why">Also worth capturing: real overweight and oversize fee <em>bands</em>. Four figures in the engine
+  ($100 oversize personal, $100 gate carry-on, $100 overweight, $150 third bag) are inherited placeholders, shown with an
+  &ldquo;Assumption&rdquo; badge. Real banded figures let those be deleted entirely.</p>
+  <p class="why">Send the results back to me and I will update the dataset, flip verified records, regenerate the seed and
+  re-run the tests.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>5. Counsel review of the policy pages <span class="mins">&mdash; external</span></h3>
+  <p class="why"><code>/privacy</code>, <code>/terms</code> and <code>/affiliate-disclosure</code> now name Oak and Main
+  Developers LLC, give the Sacramento address, set California governing law and Sacramento County venue, and state how the site
+  handles Do Not Track. Every factual claim was checked against the actual code &mdash; including correcting a claim that the app
+  writes no browser storage, which stopped being true when the service worker landed.</p>
+  <p class="why">They have still not been read by a lawyer. Worth an hour of someone&rsquo;s time before you acquire traffic,
+  particularly the liability limitation and the estimate disclaimer.</p>
+</div>
+
+<h2><span class="tag t-config">Config</span>Cloudflare settings I could not change safely</h2>
+
+<div class="item"><span class="box"></span>
+  <h3>6. Add <code>www</code>, or drop the redirect <span class="mins">&mdash; 5 min</span></h3>
+  <div class="flag">There is <strong>no <code>www</code> DNS record at all</strong> on the zone. The audit noticed www did not
+  resolve; that is why. The redirect rule I shipped in <code>_redirects</code> can never fire until www exists.</div>
+  <p class="why">Every other site in your portfolio (bountycharts, glp1-fund, ridereadyguide, benefitdial, gochujang,
+  originespana, kbbqguide) has www as a Pages custom domain. This one is the odd one out.</p>
+  <p class="why">I have <strong>removed</strong> the redirect rule, because it could never have worked: Cloudflare Pages
+  <code>_redirects</code> matches on path only, so an absolute URL in the source position is inert, and the trailing
+  <code>!</code> was Netlify syntax. A rule that looks like policy but does nothing is worse than none. To actually
+  canonicalise www: add a proxied <code>www</code> CNAME to the Pages project, add
+  <code>www.luggageliason.com</code> as a custom domain on it, then create a dashboard Redirect Rule
+  (Rules &rarr; Redirect Rules) matching that hostname to the apex, 301, preserving path and query. Or decide www is
+  simply not used and leave it absent.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>7. Turn on Always Use HTTPS <span class="mins">&mdash; 1 min</span></h3>
+  <p class="why">The zone setting <code>always_use_https</code> is currently <strong>off</strong>. Pages appears to be issuing the
+  HTTP&rarr;HTTPS redirect itself, so this is belt and braces rather than a hole, but it costs nothing.
+  Dashboard &rarr; SSL/TLS &rarr; Edge Certificates &rarr; Always Use HTTPS.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>8. Cloudflare Web Analytics &mdash; verified, nothing to do <span class="mins">&mdash; 0 min</span></h3>
+  <p class="why">I checked this against the Cloudflare API rather than leaving it to you. Web Analytics <strong>is</strong>
+  enabled for luggageliason.com with auto-install (site tag <code>7e2f42ed&hellip;</code>), so the privacy page's claim is
+  accurate. The beacon does not appear in the built output because Cloudflare injects it at the edge. Tick this and move on.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>9. Decide on HSTS preload <span class="mins">&mdash; 5 min, think first</span></h3>
+  <p class="why"><code>_headers</code> currently sends <code>max-age=63072000; includeSubDomains; preload</code>. The header is
+  safe. <em>Submitting</em> to hstspreload.org is close to irreversible and forces HTTPS on every subdomain for years.
+  Confirm every subdomain you will ever want is HTTPS-ready, then either submit at hstspreload.org or remove the
+  <code>preload</code> token.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>10. Durable rate limiting <span class="mins">&mdash; 10 min</span></h3>
+  <p class="why">The Worker enforces a per-isolate limit and emits accurate <code>RateLimit-*</code> headers, but Workers
+  isolates do not share memory, so it is best effort rather than an account-wide guarantee. Either enable the commented-out
+  rate-limit binding in <code>api/wrangler.toml</code>, or add a WAF rate-limiting rule on
+  <code>packright-api.kevynsgrin.workers.dev</code>. At current traffic this is not urgent.</p>
+</div>
+
+<h2><span class="tag t-search">Search</span>After the site is deployed</h2>
+
+<div class="item"><span class="box"></span>
+  <h3>11. Google Search Console <span class="mins">&mdash; 10 min</span></h3>
+  <p class="why">Good news: a <code>google-site-verification</code> TXT record is <strong>already on the zone</strong>, so the
+  property is likely verified. Submit <code>https://luggageliason.com/sitemap.xml</code> (18 URLs), then use URL Inspection to
+  request re-indexing of the home page &mdash; Google currently shows the old title <em>&ldquo;frontend&rdquo;</em> and that will
+  not refresh on its own. Watch the Coverage report for soft-404s.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>12. Bing Webmaster Tools <span class="mins">&mdash; 10 min</span></h3>
+  <p class="why">Not verified as far as I can tell. You can import directly from Search Console once item 11 is done, which is
+  the fastest route. Submit the same sitemap.</p>
+</div>
+
+<h2><span class="tag t-later">Later</span>Only when it applies</h2>
+
+<div class="item"><span class="box"></span>
+  <h3>13. Affiliate programme</h3>
+  <p class="why">No partner links ship today, and the old placeholder cards are gone. <code>/affiliate-disclosure</code> sets the
+  standard any future link must meet: a real approved destination, <code>rel="sponsored noopener noreferrer"</code>, and the
+  disclosure next to the link rather than only on the policy page. Do not enable acquisition against unverified data &mdash;
+  item 4 comes first.</p>
+</div>
+
+<div class="item"><span class="box"></span>
+  <h3>14. Post-deploy smoke test <span class="mins">&mdash; 3 min</span></h3>
+  <p class="why">Run this once the site is live. Every line should return what the comment says.</p>
+  <pre>curl -sI https://luggageliason.com/ | grep -i "content-security-policy\|strict-transport"   <span class="c"># both present</span>
+curl -s  https://luggageliason.com/robots.txt | head -1                                    <span class="c"># plain text, not HTML</span>
+curl -sI https://luggageliason.com/sitemap.xml | grep -i content-type                      <span class="c"># application/xml</span>
+curl -so /dev/null -w "%{http_code}\n" https://luggageliason.com/no-such-page              <span class="c"># 404, not 200</span>
+curl -s  https://luggageliason.com/ | grep -o "&lt;title&gt;[^&lt;]*"                              <span class="c"># NOT "frontend"</span></pre>
+</div>
+
+<footer>PackRight owner action checklist &middot; Oak and Main Developers LLC &middot; 29 August 2026</footer>
+
+</body>
+</html>

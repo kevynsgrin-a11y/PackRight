@@ -12,6 +12,7 @@
 
 import { airlines } from './data'
 import { airlineFaqs } from './airlineFaq'
+import { LEGAL_ENTITY, MAILING_ADDRESS } from './site'
 
 export const SITE_URL = 'https://luggageliason.com'
 export const SITE_NAME = 'PackRight'
@@ -34,8 +35,23 @@ const organization = {
   '@type': 'Organization',
   '@id': `${SITE_URL}/#organization`,
   name: SITE_NAME,
+  legalName: LEGAL_ENTITY,
   url: SITE_URL,
   description: 'PackRight is the baggage-planning tool at Luggageliason.com.',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: MAILING_ADDRESS.street,
+    addressLocality: MAILING_ADDRESS.locality,
+    addressRegion: MAILING_ADDRESS.region,
+    postalCode: MAILING_ADDRESS.postalCode,
+    addressCountry: MAILING_ADDRESS.country,
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: CONTACT_EMAIL,
+    url: `${SITE_URL}/contact`,
+  },
 }
 
 const webApplication = {
@@ -98,7 +114,7 @@ export const STATIC_PAGES: PageMeta[] = [
     path: '/carry-on-size-checker',
     title: 'Carry-On Size Checker by Airline | PackRight',
     description:
-      'Enter your bag dimensions and see which airlines it fits as a carry-on. Sizes are checked in any orientation, with the source for every limit.',
+      'Enter your bag dimensions and see which airlines accept it as a carry-on. Sizes are checked in any orientation, and every limit shows its review status.',
     changefreq: 'weekly',
     priority: 0.8,
     jsonLd: [
@@ -112,7 +128,7 @@ export const STATIC_PAGES: PageMeta[] = [
     path: '/personal-item-size-comparison',
     title: 'Personal Item Size Limits by Airline | PackRight',
     description:
-      'A side-by-side comparison of personal-item size limits across airlines, with the source and last-checked date for each figure.',
+      'A side-by-side comparison of personal-item size limits across airlines, each figure shown with its review status.',
     changefreq: 'weekly',
     priority: 0.8,
     jsonLd: [
@@ -192,7 +208,7 @@ export function airlinePageMeta(slug: string): PageMeta | null {
     title: `${airline.name} Baggage Fees and Carry-On Limits | PackRight`,
     description:
       `${airline.name} carry-on, personal item and checked bag limits, with the fee figures PackRight models, ` +
-      'their source, and when they were last checked.',
+      'the source behind each one, and its current review status.',
     changefreq: 'weekly',
     priority: 0.8,
     jsonLd: [
