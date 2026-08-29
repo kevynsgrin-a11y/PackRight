@@ -50,7 +50,16 @@ npm run deploy         # runs typecheck + tests, then wrangler deploy
 > `packright-db` now carries the full provenance schema: 8 airlines with slugs and
 > source URLs, 13 fare families, 5 benefits, 4 TSA rules, 4 fee assumptions, and
 > the `data_change_log` table. Only `npm run deploy` and the Pages deploy remain.
-> Re-running the seed is safe and idempotent.
+> Re-running the seed is idempotent, but it is **authoritative, not additive**:
+> as well as writing every record in `data/reference-data.json`, it deletes any
+> row whose id the dataset no longer carries. That is what makes it possible to
+> retire a record. Rehearse first with `npm run db:rehearse`.
+>
+> `migrations/0003_status_check.sql` constrains `status` to the three documented
+> values. It is rehearsed and safe to apply, but has **not** been applied to
+> production -- it rebuilds five tables, so it wants a deliberate maintenance
+> window rather than being run alongside a deploy. `schema.sql` already carries
+> the constraint, so any fresh database gets it.
 
 Then deploy `frontend/dist` to Cloudflare Pages. `public/_headers` and
 `public/_redirects` are Pages-specific: **the security headers, the immutable

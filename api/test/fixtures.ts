@@ -10,6 +10,7 @@ import type {
   BenefitRecord,
   FareFamilyRecord,
   FeeAssumptionRecord,
+  RecordStatus,
 } from '../src/types.ts'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -24,6 +25,23 @@ const raw = JSON.parse(
 }
 
 const bool = (v: unknown): number => (v ? 1 : 0)
+
+/**
+ * Narrows a raw dataset value to the documented status enum.
+ *
+ * Record<string, any> above erases every field's type, so a typo such as
+ * "Unverified" in reference-data.json would have flowed into the fixtures and
+ * out through the engine unchallenged -- and, because every reader treats a
+ * non-'verified' value as pending, would have failed silently rather than
+ * loudly. The tests exist to catch a dataset regression, so the dataset's one
+ * enumerated field gets checked rather than asserted.
+ */
+const asStatus = (v: unknown): RecordStatus => {
+  if (v !== 'verified' && v !== 'unverified' && v !== 'assumption') {
+    throw new Error(`reference-data.json: unrecognised status ${JSON.stringify(v)}`)
+  }
+  return v
+}
 
 export const airlines: AirlineRecord[] = raw.airlines.map((a) => ({
   id: a.id,
@@ -46,7 +64,7 @@ export const airlines: AirlineRecord[] = raw.airlines.map((a) => ({
   verified_by: a.verified_by,
   scope: a.scope,
   currency: a.currency,
-  status: a.status,
+  status: asStatus(a.status),
   change_note: a.change_note,
 }))
 
@@ -67,7 +85,7 @@ export const fareFamilies: FareFamilyRecord[] = raw.fareFamilies.map((f) => ({
   verified_by: f.verified_by,
   scope: f.scope,
   currency: f.currency,
-  status: f.status,
+  status: asStatus(f.status),
   change_note: f.change_note,
 }))
 
@@ -88,7 +106,7 @@ export const benefits: BenefitRecord[] = raw.benefits.map((b) => ({
   verified_by: b.verified_by,
   scope: b.scope,
   currency: b.currency,
-  status: b.status,
+  status: asStatus(b.status),
   change_note: b.change_note,
 }))
 
@@ -97,7 +115,7 @@ export const assumptions: FeeAssumptionRecord[] = raw.assumptions.map((a) => ({
   label: a.label,
   amount: a.amount,
   currency: raw.meta.currency,
-  status: a.status,
+  status: asStatus(a.status),
   change_note: a.change_note,
 }))
 

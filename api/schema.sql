@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS airlines (
   verified_by TEXT,
   scope TEXT,
   currency TEXT NOT NULL DEFAULT 'USD',
-  status TEXT NOT NULL DEFAULT 'unverified',
+  status TEXT NOT NULL DEFAULT 'unverified' CHECK (status IN ('verified','unverified','assumption')),
   change_note TEXT,
 
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS fare_families (
   verified_by TEXT,
   scope TEXT,
   currency TEXT NOT NULL DEFAULT 'USD',
-  status TEXT NOT NULL DEFAULT 'unverified',
+  status TEXT NOT NULL DEFAULT 'unverified' CHECK (status IN ('verified','unverified','assumption')),
   change_note TEXT,
 
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS benefits (
   verified_by TEXT,
   scope TEXT,
   currency TEXT NOT NULL DEFAULT 'USD',
-  status TEXT NOT NULL DEFAULT 'unverified',
+  status TEXT NOT NULL DEFAULT 'unverified' CHECK (status IN ('verified','unverified','assumption')),
   change_note TEXT,
 
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS tsa_rules (
   source_title TEXT,
   verified_at TEXT,
   verified_by TEXT,
-  status TEXT NOT NULL DEFAULT 'unverified',
+  status TEXT NOT NULL DEFAULT 'unverified' CHECK (status IN ('verified','unverified','assumption')),
   change_note TEXT,
 
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS fee_assumptions (
   label TEXT NOT NULL,
   amount REAL NOT NULL,
   currency TEXT NOT NULL DEFAULT 'USD',
-  status TEXT NOT NULL DEFAULT 'assumption',
+  status TEXT NOT NULL DEFAULT 'assumption' CHECK (status IN ('verified','unverified','assumption')),
   verified_at TEXT,
   verified_by TEXT,
   change_note TEXT,

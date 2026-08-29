@@ -215,10 +215,89 @@ test('resolveBenefitCoverage does not extend a waiver past the companion limit',
     bags: [],
   }))
   const coverage = resolveBenefitCoverage(passengers, benefitsFor('ua'))
-  assert.equal(coverage.get('pax-1')?.length, 1)
-  assert.equal(coverage.get('pax-2')?.length, 1)
-  assert.equal(coverage.get('pax-3')?.length, 0)
-  assert.equal(coverage.get('pax-4')?.length, 0)
+  // Keyed by position, not by id -- see the duplicate-id test below.
+  assert.equal(coverage.get(0)?.length, 1)
+  assert.equal(coverage.get(1)?.length, 1)
+  assert.equal(coverage.get(2)?.length, 0)
+  assert.equal(coverage.get(3)?.length, 0)
+})
+
+test('duplicate passenger ids cannot spread one waiver across the whole party', () => {
+  // The engine must not key coverage on a client-supplied id. Two passengers
+  // sharing 'pax-3' used to share one coverage entry, so the cardholder's
+  // waiver silently covered both and the companion limit was never enforced.
+  const passengers = [
+    { id: 'pax-3', benefitIds: ['ua-explorer'], bags: [bag('checked', null, 40)] },
+    { id: 'pax-2', benefitIds: [], bags: [bag('checked', null, 40)] },
+    { id: 'pax-3', benefitIds: [], bags: [bag('checked', null, 40)] },
+  ]
+  const result = calculateFees({
+    request: { airlineId: 'ua', fareFamilyId: 'ua-main', passengers },
+    airline: airline('ua'),
+    fareFamily: fare('ua-main'),
+    benefits: benefitsFor('ua'),
+    assumptions,
+  })
+  // ua-explorer waives the first checked bag for the holder plus one companion.
+  assert.deepEqual(
+    result.passengerBreakdown.map((p) => p.bags[0].status),
+    ['waived', 'waived', 'priced'],
+  )
+  assert.equal(result.totalFee, 40)
+})
+
+test('every passenger sharing one id is still charged individually', () => {
+  const passengers = [1, 2, 3, 4].map((n) => ({
+    id: 'dup',
+    benefitIds: n === 1 ? ['ua-explorer'] : [],
+    bags: [bag('checked', null, 40)],
+  }))
+  const result = calculateFees({
+    request: { airlineId: 'ua', fareFamilyId: 'ua-main', passengers },
+    airline: airline('ua'),
+    fareFamily: fare('ua-main'),
+    benefits: benefitsFor('ua'),
+    assumptions,
+  })
+  // Holder plus one companion are waived; the other two pay $40 each.
+  assert.equal(result.totalFee, 80)
+})
+
+test('a second holder of the same card gets their own companion allowance', () => {
+  // `seen` used to be keyed on the benefit id alone, so the third passenger's
+  // own copy of the card was skipped and they paid full fare.
+  const passengers = [
+    { id: 'p1', benefitIds: ['ua-explorer'], bags: [bag('checked', null, 40)] },
+    { id: 'p2', benefitIds: [] as string[], bags: [bag('checked', null, 40)] },
+    { id: 'p3', benefitIds: ['ua-explorer'], bags: [bag('checked', null, 40)] },
+  ]
+  const result = calculateFees({
+    request: { airlineId: 'ua', fareFamilyId: 'ua-main', passengers },
+    airline: airline('ua'),
+    fareFamily: fare('ua-main'),
+    benefits: benefitsFor('ua'),
+    assumptions,
+  })
+  assert.equal(result.totalFee, 0)
+  for (const line of result.passengerBreakdown) {
+    // A companion covered by two holders must not collect the benefit twice.
+    assert.equal(new Set(line.appliedBenefitIds).size, line.appliedBenefitIds.length)
+  }
+})
+
+test('a waived bag carrying an overweight charge is reported as priced, not waived', () => {
+  // The waiver covers the base fee, not the surcharge stacked on top of it.
+  // Reporting 'waived' while charging the caller was the defect.
+  const result = run(
+    'ua',
+    'ua-main',
+    [bag('checked', { length: 25, width: 15, height: 10 }, 60)],
+    { benefitIds: ['ua-explorer'] },
+  )
+  const checked = result.passengerBreakdown[0].bags[0]
+  assert.equal(checked.status, 'priced')
+  assert.ok((checked.fee ?? 0) > 0, 'a charged bag must carry a fee')
+  assert.match(checked.reason, /waived/i)
 })
 
 test('a second checked bag is not waived by a card that only waives the first', () => {

@@ -18,8 +18,8 @@ import {
   DISCLAIMER,
   REVIEW_INTERVAL_DAYS,
   calculateFees,
-} from './fees'
-import { ApiError, parseCalculationRequest, readJsonBody } from './validate'
+} from './fees.ts'
+import { ApiError, parseCalculationRequest, readJsonBody } from './validate.ts'
 import {
   CALCULATION_CACHE_CONTROL,
   REFERENCE_CACHE_CONTROL,
@@ -28,13 +28,13 @@ import {
   consumeRateLimit,
   rateLimitHeaders,
   resolveCorsOrigin,
-} from './http'
+} from './http.ts'
 import type {
   AirlineRecord,
   BenefitRecord,
   FareFamilyRecord,
   FeeAssumptionRecord,
-} from './types'
+} from './types.ts'
 
 type Bindings = {
   DB: D1Database
@@ -70,28 +70,31 @@ app.use('*', async (c: Context, next: Next) => {
 
   const rate = consumeRateLimit(clientKeyFor(c.req.raw))
 
-  await next()
-
-  for (const [key, value] of Object.entries(SECURITY_HEADERS)) c.header(key, value)
-  for (const [key, value] of Object.entries(rateLimitHeaders(rate))) c.header(key, value)
-  c.header('Access-Control-Allow-Origin', corsOrigin)
-  c.header('Vary', 'Origin')
-  c.header('X-API-Version', API_VERSION)
+  const baseHeaders = (): Headers => {
+    const headers = new Headers()
+    for (const [key, value] of Object.entries(SECURITY_HEADERS)) headers.set(key, value)
+    for (const [key, value] of Object.entries(rateLimitHeaders(rate))) headers.set(key, value)
+    headers.set('Access-Control-Allow-Origin', corsOrigin)
+    headers.set('Vary', 'Origin')
+    headers.set('X-API-Version', API_VERSION)
+    return headers
+  }
 
   if (!rate.allowed) {
-    // Build the headers with Headers.set rather than an object literal. Spreading
-    // c.res.headers yields lowercase names ('cache-control'), so a literal
-    // 'Cache-Control' alongside it is a DIFFERENT object key and both survived
-    // into the Headers constructor, producing
-    //   cache-control: public, max-age=3600, no-store
-    //   content-type: application/json, application/json
-    // on every 429. A cache reading the first directive could store the 429.
-    const headers = new Headers(c.res.headers)
+    // Returned BEFORE next(), so a rate-limited caller never reaches a route and
+    // never touches D1 -- the point of a limiter is to shed load, and running
+    // the handler first shed none of it.
+    //
+    // The response is built from scratch rather than by reassigning c.res.
+    // Hono's `set res` re-applies the outgoing headers it already holds, so a
+    // 429 assembled after the handler inherited the handler's own
+    // 'Cache-Control: public, max-age=3600' -- a cacheable rate-limit response.
+    const headers = baseHeaders()
     headers.set('Content-Type', 'application/json')
     headers.set('Retry-After', String(rate.resetSeconds))
     headers.set('Cache-Control', 'no-store')
 
-    c.res = new Response(
+    return new Response(
       JSON.stringify({
         error: {
           code: 'RATE_LIMITED',
@@ -100,6 +103,16 @@ app.use('*', async (c: Context, next: Next) => {
       }),
       { status: 429, headers },
     )
+  }
+
+  // Applied in a finally rather than after next(). Hono's compose already runs
+  // onError in the handler's own dispatch frame, so an ApiError does not skip
+  // this block today -- but a non-Error throw is rethrown, and that path would
+  // lose every security and RateLimit-* header. Costs nothing to close.
+  try {
+    await next()
+  } finally {
+    for (const [key, value] of baseHeaders()) c.header(key, value)
   }
 })
 

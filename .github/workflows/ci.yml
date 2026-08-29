@@ -109,3 +109,11 @@ jobs:
             echo "api/seed.sql is out of date. Run 'npm run generate:seed' in api/ and commit the result."
             exit 1
           fi
+
+      # The rehearsal applies every migration, the schema and the seed to a
+      # replica of the real production schema, then runs the Worker's own
+      # queries against the result. Nothing ran it before, so a migration could
+      # only be proven by applying it to production.
+      - name: Rehearse the migrations against a production-shaped replica
+        working-directory: api
+        run: npm run db:rehearse

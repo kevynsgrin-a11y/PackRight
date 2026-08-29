@@ -4,6 +4,8 @@
  */
 import { DatabaseSync } from 'node:sqlite'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 import { splitSql } from './sql-split.mjs'
 
 const PROD_SCHEMA = `
@@ -47,7 +49,7 @@ db.exec(PROD_SCHEMA)
 db.exec(PROD_ROWS)
 console.log('Replica of production schema built, with existing rows.')
 
-const results = { migration: [], schema: [], seed: [] }
+const results = { migration: [], schema: [], seed: [], prune: [], check: [] }
 
 function apply(label, sql, bucket) {
   for (const stmt of splitStatements(sql)) {
@@ -63,9 +65,56 @@ function apply(label, sql, bucket) {
   for (const f of failed) console.log(`   FAIL  ${f.stmt}\n         -> ${f.error}`)
 }
 
-apply('migrations/0002_add_provenance.sql', readFileSync('/home/user/PackRight/api/migrations/0002_add_provenance.sql', 'utf8'), results.migration)
-apply('schema.sql', readFileSync('/home/user/PackRight/api/schema.sql', 'utf8'), results.schema)
-apply('seed.sql', readFileSync('/home/user/PackRight/api/seed.sql', 'utf8'), results.seed)
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const read = (rel) => readFileSync(resolve(root, rel), 'utf8')
+
+apply('migrations/0002_add_provenance.sql', read('migrations/0002_add_provenance.sql'), results.migration)
+apply('schema.sql', read('schema.sql'), results.schema)
+apply('seed.sql', read('seed.sql'), results.seed)
+
+// The seed is authoritative over the id set, so prove the prune actually
+// retires a stale row -- and, just as importantly, keeps the real ones.
+db.exec("INSERT INTO fare_families (id, airline_id, name) VALUES ('zz-ghost', 'wn', 'Retired fare')")
+const ghostBefore = db.prepare("SELECT COUNT(*) AS n FROM fare_families WHERE id = 'zz-ghost'").get().n
+apply('seed.sql (re-applied over a stale row)', read('seed.sql'), results.prune)
+const ghostAfter = db.prepare("SELECT COUNT(*) AS n FROM fare_families WHERE id = 'zz-ghost'").get().n
+const realFares = db.prepare('SELECT COUNT(*) AS n FROM fare_families').get().n
+console.log(`\n=== SEED PRUNE ===`)
+console.log(`  stale row present before: ${ghostBefore}, after: ${ghostAfter} (want 1 then 0)`)
+console.log(`  real fares surviving: ${realFares} (want 13)`)
+const pruneOk = ghostBefore === 1 && ghostAfter === 0 && realFares === 13
+
+// 0003 rebuilds five tables to add the status CHECK. Row counts must survive.
+const before0003 = {}
+for (const t of ['airlines', 'fare_families', 'benefits', 'tsa_rules', 'fee_assumptions']) {
+  before0003[t] = db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n
+}
+apply('migrations/0003_status_check.sql', read('migrations/0003_status_check.sql'), results.check)
+console.log('\n=== 0003 ROW COUNTS PRESERVED? ===')
+let countsOk = true
+for (const [t, n] of Object.entries(before0003)) {
+  const after = db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n
+  const ok = after === n
+  if (!ok) countsOk = false
+  console.log(`  ${ok ? 'ok  ' : 'FAIL'}  ${t.padEnd(16)} ${n} -> ${after}`)
+}
+
+console.log('\n=== 0003 CHECK ACTUALLY ENFORCED? ===')
+let checkOk = true
+for (const t of ['airlines', 'fare_families', 'benefits', 'tsa_rules', 'fee_assumptions']) {
+  // Inside a savepoint, so a probe that succeeds does not leave a bad status
+  // behind for the verification output below to report as real.
+  db.exec('SAVEPOINT status_probe')
+  try {
+    db.exec(`UPDATE ${t} SET status = 'Unverified' WHERE rowid = (SELECT MIN(rowid) FROM ${t})`)
+    console.log(`  FAIL  ${t}: a bad status value was accepted`)
+    checkOk = false
+  } catch {
+    console.log(`  ok    ${t}: a bad status value is rejected`)
+  }
+  db.exec('ROLLBACK TO status_probe')
+  db.exec('RELEASE status_probe')
+}
 
 console.log('\n=== POST-MIGRATION VERIFICATION ===')
 const counts = {}
@@ -115,8 +164,12 @@ const legacy = db.prepare("PRAGMA table_info(benefits)").all().filter((c) => c.n
 console.log('  legacy benefits.type column ->', legacy.length ? JSON.stringify(legacy[0]) : 'gone')
 
 const allFailures =
-  results.migration.filter((r) => !r.ok).length +
-  results.schema.filter((r) => !r.ok).length +
-  results.seed.filter((r) => !r.ok).length +
-  queryFail
+  Object.values(results).reduce((n, bucket) => n + bucket.filter((r) => !r.ok).length, 0) +
+  queryFail +
+  (pruneOk ? 0 : 1) +
+  (countsOk ? 0 : 1) +
+  (checkOk ? 0 : 1)
 console.log(`\n=== REHEARSAL RESULT: ${allFailures === 0 ? 'CLEAN' : allFailures + ' FAILURE(S)'} ===`)
+// Exits non-zero so CI actually gates on this. Printing the verdict and exiting
+// 0 made the rehearsal a report rather than a check.
+if (allFailures > 0) process.exitCode = 1
