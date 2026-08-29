@@ -37,11 +37,20 @@ columns.
 
 ```bash
 cd api
-npm run db:migrate     # additive ALTER TABLE for the provenance columns (run once)
+npm run db:rehearse    # replays migration+schema+seed against a replica of the
+                       # production schema in memory, then runs the Worker's own
+                       # queries against the result. Do this before any db change.
+npm run db:migrate     # provenance columns + benefits table rebuild (run once)
 npm run db:schema      # creates fee_assumptions and data_change_log
 npm run db:seed        # backfills every column from data/reference-data.json
 npm run deploy         # runs typecheck + tests, then wrangler deploy
 ```
+
+> **The database migration has already been applied to production** (29 Aug 2026).
+> `packright-db` now carries the full provenance schema: 8 airlines with slugs and
+> source URLs, 13 fare families, 5 benefits, 4 TSA rules, 4 fee assumptions, and
+> the `data_change_log` table. Only `npm run deploy` and the Pages deploy remain.
+> Re-running the seed is safe and idempotent.
 
 Then deploy `frontend/dist` to Cloudflare Pages. `public/_headers` and
 `public/_redirects` are Pages-specific: **the security headers, the immutable
