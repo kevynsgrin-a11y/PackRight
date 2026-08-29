@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { PageHeader, Prose } from '../components/Page'
 import { API_BASE_URL } from '../lib/api'
 import { CONTACT_EMAIL, PRIVACY_EMAIL } from '../lib/seo'
-import { LAST_UPDATED } from '../lib/site'
+import { LAST_UPDATED, LEGAL_ENTITY, MAILING_ADDRESS_LINE, OPERATING_STATE } from '../lib/site'
 
 const apiHost = (() => {
   try {
@@ -31,6 +31,13 @@ export default function Privacy() {
           <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a> to ask privacy questions.
         </p>
 
+        <h2 id="who-we-are">Who operates this site</h2>
+        <p>
+          PackRight and Luggageliason.com are operated by <strong>{LEGAL_ENTITY}</strong>, based in{' '}
+          {OPERATING_STATE}. Postal address: {MAILING_ADDRESS_LINE}. Privacy questions go to{' '}
+          <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>.
+        </p>
+
         <h2 id="what-we-collect">What we collect</h2>
         <p>
           We do not ask for your name, email address, payment details or precise location to produce
@@ -39,6 +46,13 @@ export default function Privacy() {
         <p>
           The application does not write to cookies, <code>localStorage</code>,{' '}
           <code>sessionStorage</code> or IndexedDB, and does not request geolocation.
+        </p>
+        <p>
+          It does use one form of browser storage: a service worker stores a copy of the
+          site&rsquo;s own pages, styles and scripts in the browser&rsquo;s Cache API so the site
+          loads quickly and can show an offline notice. That cache holds only files served from
+          this site. It never stores your bag details or any estimate, and clearing your
+          browser&rsquo;s site data removes it.
         </p>
 
         <h2 id="calculation-service">The calculation service</h2>
@@ -70,11 +84,25 @@ export default function Privacy() {
           trackers.
         </p>
 
+        <h2 id="retention">Retention</h2>
+        <p>
+          We keep no user records, so there is nothing for us to retain or delete on a schedule.
+          Our infrastructure provider keeps operational logs for its own delivery and security
+          purposes under its retention policy, not ours.
+        </p>
+
         <h2 id="hosting">Hosting and security</h2>
         <p>
           The site and the calculation service are delivered by Cloudflare over HTTPS. Cloudflare
           processes requests as our infrastructure provider, including logs it keeps to deliver and
           protect the service.
+        </p>
+
+        <h2 id="do-not-track">Do Not Track</h2>
+        <p>
+          PackRight does not track visitors across third-party websites, and does not allow third
+          parties to do so here. Because there is no cross-site tracking to switch off, the site
+          does not change its behaviour in response to a browser Do Not Track signal.
         </p>
 
         <h2 id="rights">Your rights</h2>
@@ -85,6 +113,17 @@ export default function Privacy() {
           <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a> and we will respond.
         </p>
         <p>We do not sell personal information or share it for cross-context behavioural advertising.</p>
+
+        <h2 id="california">California residents</h2>
+        <p>
+          {LEGAL_ENTITY} operates from {OPERATING_STATE}. We do not sell or share personal
+          information, we do not use it for cross-context behavioural advertising, and we do not
+          build profiles of visitors. Because the site requires no account and collects no
+          identifiers, in most cases there is simply nothing held about you to disclose, delete or
+          correct. If you believe otherwise, write to{' '}
+          <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a> or to the postal address above and
+          we will respond. We will not discriminate against you for making a request.
+        </p>
 
         <h2 id="children">Children</h2>
         <p>PackRight is a general-audience travel tool and is not directed to children.</p>
@@ -101,6 +140,11 @@ export default function Privacy() {
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, or see our{' '}
           <Link to="/contact">contact page</Link>.
         </p>
+        <address className="not-italic">
+          {LEGAL_ENTITY}
+          <br />
+          {MAILING_ADDRESS_LINE}
+        </address>
 
         <p className="text-sm">Last updated {LAST_UPDATED}.</p>
       </Prose>

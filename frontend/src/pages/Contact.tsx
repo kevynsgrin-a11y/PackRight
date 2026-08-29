@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PageHeader, Prose } from '../components/Page'
 import { CONTACT_EMAIL, PRIVACY_EMAIL } from '../lib/seo'
-import { LAST_UPDATED } from '../lib/site'
+import { LAST_UPDATED, LEGAL_ENTITY, MAILING_ADDRESS_LINE } from '../lib/site'
 
 export default function Contact() {
   return (
@@ -41,6 +41,14 @@ export default function Contact() {
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Our position on commercial links is
           set out in the <Link to="/affiliate-disclosure">affiliate disclosure</Link>.
         </p>
+
+        <h2 id="postal">By post</h2>
+        <p>For anything that needs to reach us on paper, including legal notices:</p>
+        <address className="not-italic">
+          {LEGAL_ENTITY}
+          <br />
+          {MAILING_ADDRESS_LINE}
+        </address>
 
         <h2 id="what-we-cannot-do">What we cannot help with</h2>
         <p>

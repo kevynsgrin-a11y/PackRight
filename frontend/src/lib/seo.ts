@@ -12,6 +12,7 @@
 
 import { airlines } from './data'
 import { airlineFaqs } from './airlineFaq'
+import { LEGAL_ENTITY, MAILING_ADDRESS } from './site'
 
 export const SITE_URL = 'https://luggageliason.com'
 export const SITE_NAME = 'PackRight'
@@ -34,8 +35,23 @@ const organization = {
   '@type': 'Organization',
   '@id': `${SITE_URL}/#organization`,
   name: SITE_NAME,
+  legalName: LEGAL_ENTITY,
   url: SITE_URL,
   description: 'PackRight is the baggage-planning tool at Luggageliason.com.',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: MAILING_ADDRESS.street,
+    addressLocality: MAILING_ADDRESS.locality,
+    addressRegion: MAILING_ADDRESS.region,
+    postalCode: MAILING_ADDRESS.postalCode,
+    addressCountry: MAILING_ADDRESS.country,
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    email: CONTACT_EMAIL,
+    url: `${SITE_URL}/contact`,
+  },
 }
 
 const webApplication = {
