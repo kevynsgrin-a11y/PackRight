@@ -14,7 +14,8 @@
     "generate:seed": "node scripts/generate-seed.mjs",
     "db:migrate": "wrangler d1 execute packright-db --remote --file=./migrations/0002_add_provenance.sql",
     "db:schema": "wrangler d1 execute packright-db --remote --file=./schema.sql",
-    "db:seed": "wrangler d1 execute packright-db --remote --file=./seed.sql"
+    "db:seed": "wrangler d1 execute packright-db --remote --file=./seed.sql",
+    "db:rehearse": "node scripts/migration-rehearsal.mjs"
   },
   "keywords": [],
   "author": "",
