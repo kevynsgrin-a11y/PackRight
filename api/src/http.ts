@@ -53,6 +53,46 @@ interface Bucket {
  */
 const buckets = new Map<string, Bucket>()
 
+/** Above this many live buckets, the oldest are evicted to restore the bound. */
+const BUCKET_CEILING = 5000
+let lastSweepAt = 0
+
+/**
+ * Keeps `buckets` bounded.
+ *
+ * The previous version swept only expired entries, and only when the map was
+ * already over the ceiling -- so a burst of distinct live clients (a rotating
+ * IPv6 /64 is the realistic case) freed nothing and left the map growing, while
+ * paying for a full O(n) scan on every single request from then on. Now the
+ * scan is time-gated to once per window, and if expiry alone does not get back
+ * under the ceiling the oldest-resetting buckets are evicted until it does.
+ *
+ * Evicting a live bucket resets that client's count, which is acceptable: this
+ * limiter is explicitly best-effort per-isolate. The authoritative control is a
+ * Cloudflare WAF rule (see api/README.md).
+ */
+function sweepBuckets(now: number): void {
+  if (buckets.size <= BUCKET_CEILING) return
+  if (now - lastSweepAt < RATE_LIMIT.windowSeconds * 1000) return
+  lastSweepAt = now
+
+  for (const [key, value] of buckets) {
+    if (value.resetAt <= now) buckets.delete(key)
+  }
+  if (buckets.size <= BUCKET_CEILING) return
+
+  const byAge = [...buckets.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt)
+  for (let i = 0; i < byAge.length && buckets.size > BUCKET_CEILING; i++) {
+    buckets.delete(byAge[i][0])
+  }
+}
+
+/** Test seam. Clears all accounting so one test's traffic cannot reach another. */
+export function __resetRateLimitForTests(): void {
+  buckets.clear()
+  lastSweepAt = 0
+}
+
 export interface RateLimitResult {
   allowed: boolean
   limit: number
@@ -69,12 +109,7 @@ export function consumeRateLimit(clientKey: string, now = Date.now()): RateLimit
     buckets.set(clientKey, bucket)
   }
 
-  // Opportunistic cleanup so the map cannot grow without bound in a long-lived isolate.
-  if (buckets.size > 5000) {
-    for (const [key, value] of buckets) {
-      if (value.resetAt <= now) buckets.delete(key)
-    }
-  }
+  sweepBuckets(now)
 
   bucket.count += 1
   const resetSeconds = Math.max(0, Math.ceil((bucket.resetAt - now) / 1000))

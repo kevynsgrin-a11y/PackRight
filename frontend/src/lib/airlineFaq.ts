@@ -11,8 +11,8 @@
  */
 
 import type { Airline } from './data'
-import { faresForAirline } from './data'
-import { formatDimensions } from './format'
+import { faresForAirline, isReviewPending } from './data'
+import { formatDimensions, formatDate } from './format'
 
 export interface FaqEntry {
   question: string
@@ -21,9 +21,36 @@ export interface FaqEntry {
 
 const money = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`
 
+/** Says which fares include a personal item, from the data rather than by assertion. */
+function personalItemClause(airline: Airline): string {
+  const fares = faresForAirline(airline.id)
+  if (fares.length === 0) return ''
+  const included = fares.filter((f) => f.includes_personal_item)
+  if (included.length === fares.length) {
+    return `Every fare family PackRight models for ${airline.name} includes a personal item. `
+  }
+  if (included.length === 0) {
+    return `No fare family PackRight models for ${airline.name} includes a personal item. `
+  }
+  return (
+    `${included.length} of the ${fares.length} fare families PackRight models for ` +
+    `${airline.name} include a personal item. `
+  )
+}
+
 export function airlineFaqs(airline: Airline): FaqEntry[] {
   const entries: FaqEntry[] = []
-  const unverified = 'This figure has not yet been checked against the airline source, so confirm it before you travel.'
+
+  // Derived from the record, not hard-coded. A fixed "not yet checked" sentence
+  // is right today -- every record is unverified -- but it would keep saying so
+  // after a steward verified the record, contradicting the badge next to it.
+  const provenance = (record: Airline): string =>
+    isReviewPending(record)
+      ? 'This figure has not yet been checked against the airline source, so confirm it before you travel.'
+      : `PackRight last checked this against the airline's own page on ${formatDate(record.verified_at)}. ` +
+        'Airlines can change a policy at any time, so confirm it before you travel.'
+
+  const unverified = provenance(airline)
 
   const carryOn = formatDimensions(
     airline.carry_on_length,
@@ -50,8 +77,9 @@ export function airlineFaqs(airline: Airline): FaqEntry[] {
       question: `What counts as a personal item on ${airline.name}?`,
       answer:
         `A personal item is the smaller bag that goes under the seat in front of you. PackRight ` +
-        `models ${airline.name}'s limit as ${personal}. Every fare family we model for ` +
-        `${airline.name} includes a personal item. ${unverified}`,
+        `models ${airline.name}'s limit as ${personal}. ` +
+        personalItemClause(airline) +
+        unverified,
     })
   }
 
@@ -66,8 +94,10 @@ export function airlineFaqs(airline: Airline): FaqEntry[] {
       question: `How much is a checked bag on ${airline.name}?`,
       answer:
         `PackRight models a first checked bag on ${airline.name} at ` +
-        (min === max ? money(min) : `${money(min)} to ${money(max)}`) +
-        ` depending on the fare family, for a one-way US domestic trip. Airport prices, partner ` +
+        (min === max
+          ? `${money(min)}`
+          : `${money(min)} to ${money(max)} depending on the fare family`) +
+        `, for a one-way US domestic trip. Airport prices, partner ` +
         `segments and international itineraries can differ, and some airlines price bags by route ` +
         `and by when you buy them. ${unverified}`,
     })
@@ -78,10 +108,12 @@ export function airlineFaqs(airline: Airline): FaqEntry[] {
       question: `How heavy can a checked bag be on ${airline.name}?`,
       answer:
         `PackRight models ${airline.name}'s standard checked-bag weight limit as ` +
-        `${airline.checked_bag_weight} lb, with a total of length plus width plus height up to ` +
-        `${airline.checked_bag_linear_dim ?? 62} inches. Going over usually means an extra charge ` +
-        `that is banded by weight and differs per airline, so PackRight flags it rather than ` +
-        `quoting a price. ${unverified}`,
+        `${airline.checked_bag_weight} lb` +
+        (airline.checked_bag_linear_dim != null
+          ? `, with a total of length plus width plus height up to ${airline.checked_bag_linear_dim} inches`
+          : '. PackRight has no published size limit recorded for this airline') +
+        `. Going over usually means an extra charge that is banded by weight and differs per ` +
+        `airline, so PackRight flags it rather than quoting a price. ${unverified}`,
     })
   }
 

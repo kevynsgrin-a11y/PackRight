@@ -32,7 +32,7 @@ import type {
   FeeStatus,
   PassengerLine,
   RecordStatus,
-} from './types'
+} from './types.ts'
 
 export const API_VERSION = '1.0.0'
 
@@ -95,33 +95,46 @@ function basisOf(components: FeeComponent[]): 'sourced' | 'assumption' | 'unknow
 export function resolveBenefitCoverage(
   passengers: CalculationRequest['passengers'],
   benefits: BenefitRecord[],
-): Map<string, BenefitRecord[]> {
-  const coverage = new Map<string, BenefitRecord[]>()
-  for (const pax of passengers) coverage.set(pax.id, [])
+): Map<number, BenefitRecord[]> {
+  // Keyed by the passenger's position, never by pax.id. Ids are client-supplied
+  // and validate.ts substitutes positional defaults for missing ones, so a body
+  // that names one passenger 'pax-3' and omits the rest yields two passengers
+  // with the same id. Keying on that id collapsed them into a single entry, and
+  // a waiver granted to one leaked to every passenger sharing it -- defeating
+  // the companion limit outright.
+  const coverage = new Map<number, BenefitRecord[]>()
+  passengers.forEach((_, index) => coverage.set(index, []))
 
   const byId = new Map(benefits.map((b) => [b.id, b]))
+  // Keyed by holder AND benefit. Keyed on the benefit alone, a second passenger
+  // holding the same card was skipped entirely, so their own companion
+  // allowance was never applied.
   const seen = new Set<string>()
 
-  for (const holder of passengers) {
+  passengers.forEach((holder, holderIndex) => {
     for (const benefitId of holder.benefitIds ?? []) {
-      if (seen.has(benefitId)) continue
+      const seenKey = `${holderIndex}|${benefitId}`
+      if (seen.has(seenKey)) continue
       const benefit = byId.get(benefitId)
       if (!benefit) continue
-      seen.add(benefitId)
+      seen.add(seenKey)
 
       // The holder, then companions in itinerary order up to the companion limit.
-      const covered = [holder.id]
+      const covered = [holderIndex]
       const limit = Math.max(0, benefit.companion_limit ?? 0)
-      for (const other of passengers) {
+      for (let other = 0; other < passengers.length; other++) {
         if (covered.length > limit) break
-        if (other.id === holder.id) continue
-        covered.push(other.id)
+        if (other === holderIndex) continue
+        covered.push(other)
       }
-      for (const paxId of covered) {
-        coverage.get(paxId)?.push(benefit)
+      for (const index of covered) {
+        const list = coverage.get(index)
+        // A companion can fall under two holders of the same card. Without this
+        // guard the benefit would appear twice in appliedBenefitIds.
+        if (list && !list.includes(benefit)) list.push(benefit)
       }
     }
-  }
+  })
   return coverage
 }
 
@@ -361,6 +374,16 @@ function priceOneCheckedBag(
     }
   }
 
+  // A waiver covers the base fare's bag fee, not the overweight surcharge added
+  // above it. Leaving status at 'waived' while components carried a charge made
+  // the UI label a bag the caller is being charged for as free. The carry-on
+  // path already reconciles the two (see the oversize branch); mirror it here.
+  // 'unpriced' outranks both: it means part of the total is unknown.
+  if (status !== 'unpriced') {
+    const charged = components.reduce((sum, c) => sum + (c.amount ?? 0), 0)
+    if (charged > 0) status = 'priced'
+  }
+
   return { components, status, reason, warnings }
 }
 
@@ -386,8 +409,9 @@ export function calculateFees(inputs: EngineInputs): CalculationResponse {
   let usesAssumptions = false
   const passengerBreakdown: PassengerLine[] = []
 
-  for (const pax of request.passengers) {
-    const paxBenefits = coverage.get(pax.id) ?? []
+  for (let paxIndex = 0; paxIndex < request.passengers.length; paxIndex++) {
+    const pax = request.passengers[paxIndex]
+    const paxBenefits = coverage.get(paxIndex) ?? []
     const waivesFirst = paxBenefits.some((b) => !!b.waives_first_checked)
     const waivesSecond = paxBenefits.some((b) => !!b.waives_second_checked)
     const waivesCarryOn = paxBenefits.some((b) => !!b.waives_carry_on)
@@ -476,10 +500,13 @@ export function calculateFees(inputs: EngineInputs): CalculationResponse {
       verified_at: c.record.verified_at,
     }))
 
-  const verifiedDates = contributing
-    .map((c) => c.record.verified_at)
-    .filter((d): d is string => !!d && !Number.isNaN(Date.parse(d)))
-    .sort()
+  // Every contributing record must carry a usable date, or there is no date the
+  // estimate as a whole can honestly claim. Filtering the nulls out and taking
+  // the oldest survivor reported a check that covered only part of the answer.
+  const recordDates = contributing.map((c) => c.record.verified_at)
+  const verifiedDates = recordDates.every((d) => !!d && !Number.isNaN(Date.parse(d)))
+    ? (recordDates as string[]).slice().sort()
+    : []
 
   const dataQuality: DataQuality = {
     reviewPending: pendingRecords.length > 0,

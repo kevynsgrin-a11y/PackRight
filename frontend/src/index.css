@@ -15,6 +15,16 @@
   --color-text-muted: #94a3b8;
 }
 
+/*
+ * The header is fixed at 64px, so anything the browser scrolls into view on
+ * focus -- a Shift+Tab back up the page, a skip link, a hash deep-link --
+ * landed underneath it, focus ring and all. The document element is the
+ * scrollport (App's wrapper is min-h-screen and grows), so this applies here.
+ */
+html {
+  scroll-padding-top: 5rem;
+}
+
 body {
   @apply bg-premium-900 text-text-main font-sans antialiased min-h-screen;
 }

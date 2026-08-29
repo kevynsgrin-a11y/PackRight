@@ -11,14 +11,36 @@ const outPath = resolve(here, '../seed.sql')
 
 const data = JSON.parse(readFileSync(dataPath, 'utf8'))
 
+// A raw SQL expression, distinguishable from data. The previous version used
+// the magic string "datetime('now')_RAW" and unquoted it with a regex over the
+// finished file -- so the same characters appearing inside a change_note would
+// have been unquoted too, splicing an expression into a data string.
+const RAW = (sql) => ({ __raw: sql })
+const NOW = RAW("datetime('now')")
+
 const q = (v) => {
   if (v === null || v === undefined) return 'NULL'
+  if (typeof v === 'object' && v !== null && typeof v.__raw === 'string') return v.__raw
   if (typeof v === 'number') return String(v)
   if (typeof v === 'boolean') return v ? '1' : '0'
   return `'${String(v).replace(/'/g, "''")}'`
 }
 
 const row = (values) => `  (${values.map(q).join(', ')})`
+
+/**
+ * Removes rows the dataset no longer contains.
+ *
+ * REPLACE INTO alone is additive: a record deleted from
+ * data/reference-data.json stayed in D1 forever and kept being served, with no
+ * way to notice short of reading the table. The dataset is the source of truth,
+ * so the seed has to be able to retire a record as well as add one.
+ *
+ * Children are pruned before parents so a fare or benefit whose airline was
+ * removed does not outlive it.
+ */
+const prune = (table, ids) =>
+  `DELETE FROM ${table} WHERE id NOT IN (\n${ids.map((id) => `  ${q(id)}`).join(',\n')}\n);`
 
 const sections = []
 
@@ -46,7 +68,7 @@ ${data.airlines.map((a) => row([
   a.carry_on.length, a.carry_on.width, a.carry_on.height, a.carry_on.weight,
   a.checked.weight, a.checked.linear_dim,
   a.source_url, a.source_title, a.effective_date, a.verified_at, a.verified_by,
-  a.scope, a.currency, a.status, a.change_note, "datetime('now')_RAW",
+  a.scope, a.currency, a.status, a.change_note, NOW,
 ])).join(',\n')};`)
 
 sections.push(`REPLACE INTO fare_families (
@@ -59,7 +81,7 @@ ${data.fareFamilies.map((f) => row([
   f.id, f.airline_id, f.name, f.includes_personal_item, f.includes_carry_on,
   f.first_checked_fee, f.second_checked_fee, f.third_plus_checked_fee, f.carry_on_fee,
   f.source_url, f.source_title, f.effective_date, f.verified_at, f.verified_by,
-  f.scope, f.currency, f.status, f.change_note, "datetime('now')_RAW",
+  f.scope, f.currency, f.status, f.change_note, NOW,
 ])).join(',\n')};`)
 
 sections.push(`REPLACE INTO benefits (
@@ -72,7 +94,7 @@ ${data.benefits.map((b) => row([
   b.id, b.name, b.airline_id, b.benefit_type, b.tier,
   b.waives_first_checked, b.waives_second_checked, b.waives_carry_on, b.companion_limit,
   b.source_url, b.source_title, b.effective_date, b.verified_at, b.verified_by,
-  b.scope, b.currency, b.status, b.change_note, "datetime('now')_RAW",
+  b.scope, b.currency, b.status, b.change_note, NOW,
 ])).join(',\n')};`)
 
 sections.push(`REPLACE INTO tsa_rules (
@@ -82,7 +104,7 @@ sections.push(`REPLACE INTO tsa_rules (
 ${data.tsaRules.map((t) => row([
   t.id, t.item_name, t.category, t.allowed_carry_on, t.allowed_checked, t.notes,
   t.source_url, t.source_title, t.verified_at, t.verified_by, t.status, t.change_note,
-  "datetime('now')_RAW",
+  NOW,
 ])).join(',\n')};`)
 
 sections.push(`REPLACE INTO fee_assumptions (
@@ -90,11 +112,21 @@ sections.push(`REPLACE INTO fee_assumptions (
 ) VALUES
 ${data.assumptions.map((a) => row([
   a.id, a.label, a.amount, data.meta.currency, a.status, a.verified_at, a.verified_by,
-  a.change_note, "datetime('now')_RAW",
+  a.change_note, NOW,
 ])).join(',\n')};`)
 
-// Replace the sentinel with a raw SQL expression (not a quoted string).
-const sql = sections.join('\n\n').replace(/'datetime\(''now''\)_RAW'/g, "datetime('now')") + '\n'
+sections.push(`-- Retire anything the dataset no longer carries. Children first.
+${prune('fare_families', data.fareFamilies.map((f) => f.id))}
+
+${prune('benefits', data.benefits.map((b) => b.id))}
+
+${prune('airlines', data.airlines.map((a) => a.id))}
+
+${prune('tsa_rules', data.tsaRules.map((t) => t.id))}
+
+${prune('fee_assumptions', data.assumptions.map((a) => a.id))}`)
+
+const sql = sections.join('\n\n') + '\n'
 
 writeFileSync(outPath, sql)
 console.log(`Wrote ${outPath} (${sql.split('\n').length} lines) from dataset v${data.meta.version}`)

@@ -44,6 +44,33 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+/** Newest-first cap on the runtime page cache. */
+const MAX_PAGE_ENTRIES = 40
+
+/**
+ * Stores a document under its pathname alone.
+ *
+ * Keying on the Request meant '/methodology', '/methodology?utm_source=x' and
+ * '/methodology?ref=y' were three entries for one document, so a share link
+ * with tracking parameters grew the cache without bound. The trim keeps the
+ * store to a size a phone will actually retain.
+ */
+function cachePage(pathname, response) {
+  return caches
+    .open(PAGE_CACHE)
+    .then((cache) =>
+      cache.put(new Request(pathname), response).then(() =>
+        cache.keys().then((keys) => {
+          const excess = keys.length - MAX_PAGE_ENTRIES
+          return excess > 0
+            ? Promise.all(keys.slice(0, excess).map((key) => cache.delete(key)))
+            : undefined
+        }),
+      ),
+    )
+    .catch(() => {})
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event
   if (request.method !== 'GET') return
@@ -61,13 +88,19 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone()
-          caches.open(PAGE_CACHE).then((cache) => cache.put(request, copy))
+          // Only successful documents are stored. Caching unconditionally meant
+          // one 404 or 502 shadowed the offline page for that URL until the
+          // next deploy: the offline branch below prefers a cached response,
+          // and an error page IS a cached response.
+          if (response.ok) {
+            const copy = response.clone()
+            event.waitUntil(cachePage(url.pathname, copy))
+          }
           return response
         })
         .catch(() =>
           caches
-            .match(request)
+            .match(new Request(url.pathname))
             .then((cached) => cached || caches.match(OFFLINE_URL))
             .then((cached) => cached || Response.error()),
         ),
@@ -81,8 +114,18 @@ self.addEventListener('fetch', (event) => {
         (cached) =>
           cached ||
           fetch(request).then((response) => {
-            const copy = response.clone()
-            caches.open(SHELL_CACHE).then((cache) => cache.put(request, copy))
+            // Asset URLs are content-hashed and served cache-first, so pinning
+            // a transient 404 against one would persist for the life of the
+            // build with no way for the page to recover.
+            if (response.ok) {
+              const copy = response.clone()
+              event.waitUntil(
+                caches
+                  .open(SHELL_CACHE)
+                  .then((cache) => cache.put(request, copy))
+                  .catch(() => {}),
+              )
+            }
             return response
           }),
       ),

@@ -213,7 +213,9 @@ export default function Home() {
           const apiError = err instanceof ApiClientError ? err : null
           setCalcStatus('error')
           setCalcError({
-            message: apiError?.message ?? 'We could not work out your estimate right now.',
+            // The surrounding copy already says this, so an error with no
+            // message of its own contributes nothing rather than repeating it.
+            message: apiError?.message ?? '',
             retryable: apiError?.retryable ?? true,
           })
           setAnnouncement('We could not update your estimate. Your figures may be out of date.')
@@ -225,8 +227,16 @@ export default function Home() {
 
   useEffect(() => () => calcAbortRef.current?.abort(), [])
 
-  /** True when what is on screen no longer matches the current inputs. */
-  const resultIsStale = result !== null && resultKey !== payloadKey
+  /**
+   * True when figures are on screen but no longer match the form.
+   *
+   * The `result !== null` guard is the point. The previous test was
+   * `resultKey !== payloadKey || calcStatus === 'error'`, which treated a
+   * first-load failure as stale -- so an empty panel got a warning ring and a
+   * banner announcing that "the figures below were calculated for your previous
+   * selection", with no figures and no previous selection.
+   */
+  const showStale = result !== null && (resultKey !== payloadKey || calcStatus === 'error')
 
   /* ---------------- Handlers ---------------- */
 
@@ -283,7 +293,7 @@ export default function Home() {
   }, [airline])
 
   const selectClass =
-    'w-full bg-premium-900 border border-white/10 rounded-xl py-2.5 px-4 appearance-none text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary'
+    'w-full bg-premium-900 border border-white/25 rounded-xl py-2.5 px-4 appearance-none text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary'
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -406,7 +416,7 @@ export default function Home() {
                   const parsed = Number.parseInt(e.target.value, 10)
                   setPassengersCount(Number.isFinite(parsed) ? Math.min(9, Math.max(1, parsed)) : 1)
                 }}
-                className="w-full bg-premium-900 border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                className="w-full bg-premium-900 border border-white/25 rounded-xl py-2.5 px-4 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
               />
               <p id="passengers-help" className="mt-1 text-xs text-text-muted">
                 The same bags are applied to every passenger.
@@ -470,7 +480,7 @@ export default function Home() {
               <p className="flex items-start gap-2 text-sm text-red-100">
                 <TriangleAlert className="w-4 h-4 shrink-0 mt-0.5 text-red-400" aria-hidden="true" />
                 <span>
-                  We could not refresh airline rules. Your estimate is unavailable right now.
+                  We could not work out your estimate right now.
                   {calcError.message ? ` ${calcError.message}` : ''}
                 </span>
               </p>
@@ -488,7 +498,7 @@ export default function Home() {
           ) : null}
         </div>
 
-        {resultIsStale || calcStatus === 'error' ? (
+        {showStale ? (
           <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-2 text-xs text-amber-100">
             The figures below were calculated for your previous selection and no longer match the
             form.
@@ -503,9 +513,7 @@ export default function Home() {
         <div
           aria-busy={calcStatus === 'loading'}
           className={
-            resultIsStale || calcStatus === 'error'
-              ? 'rounded-2xl ring-2 ring-amber-500/40'
-              : undefined
+            showStale ? 'rounded-2xl ring-2 ring-amber-500/40' : undefined
           }
         >
           <FeeMatrix result={result} />
@@ -519,7 +527,14 @@ export default function Home() {
           allowanceLabels={allowanceLabels}
         />
 
-        <FeeAvoidanceTips result={result} airline={airline} />
+        {/*
+          Hidden while stale. This panel pairs the displayed result with the
+          currently selected airline, so between a selection change and the next
+          calculation it renders a hybrid: a condition derived from the previous
+          airline's figures, labelled and linked with the new airline's name.
+          The amber banner above warns about the figures, not about this.
+        */}
+        {showStale ? null : <FeeAvoidanceTips result={result} airline={airline} />}
 
         <p className="text-sm text-text-muted">
           Want the detail behind these numbers? Read{' '}

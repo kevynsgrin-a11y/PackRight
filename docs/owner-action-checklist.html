@@ -76,7 +76,7 @@
 <table class="meta">
   <tr><td>Prepared</td><td>29 August 2026</td></tr>
   <tr><td>Operator</td><td>Oak and Main Developers LLC &middot; 2108 N St., Sacramento, CA 95816</td></tr>
-  <tr><td>Repository</td><td>kevynsgrin-a11y/PackRight &middot; branch <code>claude/site-hardening-pass-2</code></td></tr>
+  <tr><td>Repository</td><td>kevynsgrin-a11y/PackRight &middot; branch <code>claude/luggageliason-audit-p0-p1-xxun0z</code></td></tr>
   <tr><td>Cloudflare zone</td><td>luggageliason.com &middot; active, Free plan</td></tr>
 </table>
 <div class="rule"></div>
@@ -93,6 +93,21 @@
     regression where the UI rebuilt a green &ldquo;Verified&rdquo; badge from a date for records the API had marked
     unverified, a malformed <code>Cache-Control</code> on every rate-limit response, a render crash that blanked the page on a
     malformed API body, a CI lint gate that could never fail, and a fabricated Southwest dimension in my own dataset.</li>
+    <li><strong>That audit then completed in full</strong> &mdash; 37 confirmed findings, 26 rejected, no P0s &mdash; and all
+    of them are now fixed. The ones worth naming: a card waiver could cover an entire party and defeat the companion limit,
+    because passenger benefit coverage was keyed on a client-supplied id that is not checked for uniqueness; a bag could be
+    labelled &ldquo;waived&rdquo; while the traveller was being charged an overweight surcharge on it; the rate limiter ran
+    <em>after</em> the database queries it existed to prevent; the 32&nbsp;KB request cap could be walked past entirely; the
+    airline FAQ invented a 62-inch size limit for any airline that publishes none; and the service worker cached error pages,
+    so one 404 would hide the offline page for that URL until the next deploy.</li>
+    <li><strong>Second production database change applied and verified</strong> (migration 0003). <code>status</code> is now
+    constrained at the database itself to the three documented values, so no hand-typed <code>UPDATE</code> can put an
+    unrecognised value in. Rehearsed first &mdash; which caught two defects in my own draft, one of which would have emptied
+    two tables. Afterwards: row counts unchanged, foreign keys intact, and a bad status value confirmed rejected by the live
+    database.</li>
+    <li><strong>The database and the dataset were reconciled.</strong> Every id in production matches
+    <code>data/reference-data.json</code> exactly, which is what item&nbsp;4 below depends on and what makes the seed safe to
+    re-run.</li>
   </ul>
 </div>
 
@@ -104,6 +119,8 @@
   <code>packright-6zl.pages.dev</code>, but <strong>no Pages project by that name exists</strong> in your Cloudflare account
   (I checked all 10). Either it was deleted, renamed, or lives somewhere I cannot see. I could not load the site to check,
   because this environment blocks outbound web access.</div>
+  <p class="why">Re-checked at 15:07 UTC on 29 August, after PR&nbsp;#2 merged: still 10 Pages projects, still none of them
+  PackRight, and the apex CNAME still points at the missing one. Also still no <code>www</code> record.</p>
   <p class="why">This decides where the new frontend gets deployed, so resolve it before anything else. Open the Cloudflare
   dashboard &rarr; Workers &amp; Pages and look for the project behind that hostname. If it is gone, create a new Pages project,
   then repoint the apex CNAME at its <code>*.pages.dev</code> subdomain and add <code>luggageliason.com</code> as a custom domain.</p>
@@ -148,6 +165,11 @@ npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
   <p class="why">Also worth capturing: real overweight and oversize fee <em>bands</em>. Four figures in the engine
   ($100 oversize personal, $100 gate carry-on, $100 overweight, $150 third bag) are inherited placeholders, shown with an
   &ldquo;Assumption&rdquo; badge. Real banded figures let those be deleted entirely.</p>
+  <div class="flag"><strong>One thing the research should settle:</strong> all eight airlines carry an identical 62-inch
+  checked-bag linear limit. 62 inches is the industry-standard figure, so this may well be right &mdash; but eight identical
+  unverified values is the signature of a single assumption copied across the table rather than eight figures read off eight
+  airline pages. Worth confirming per airline rather than in aggregate. (The code no longer invents this number when it is
+  missing, but it cannot tell you whether a present one was ever checked.)</div>
   <p class="why">Send the results back to me and I will update the dataset, flip verified records, regenerate the seed and
   re-run the tests.</p>
 </div>
@@ -162,7 +184,7 @@ npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
   particularly the liability limitation and the estimate disclaimer.</p>
 </div>
 
-<h2><span class="tag t-config">Config</span>Cloudflare settings I could not change safely</h2>
+<h2><span class="tag t-config">Config</span>Cloudflare settings &mdash; two done, the rest need a decision</h2>
 
 <div class="item"><span class="box"></span>
   <h3>6. Add <code>www</code>, or drop the redirect <span class="mins">&mdash; 5 min</span></h3>
@@ -180,10 +202,11 @@ npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
 </div>
 
 <div class="item"><span class="box"></span>
-  <h3>7. Turn on Always Use HTTPS <span class="mins">&mdash; 1 min</span></h3>
-  <p class="why">The zone setting <code>always_use_https</code> is currently <strong>off</strong>. Pages appears to be issuing the
-  HTTP&rarr;HTTPS redirect itself, so this is belt and braces rather than a hole, but it costs nothing.
-  Dashboard &rarr; SSL/TLS &rarr; Edge Certificates &rarr; Always Use HTTPS.</p>
+  <h3>7. Always Use HTTPS &mdash; done, nothing to do <span class="mins">&mdash; 0 min</span></h3>
+  <p class="why">The zone setting <code>always_use_https</code> was <strong>off</strong>. I turned it <strong>on</strong>
+  through the Cloudflare API and confirmed it read back as on. Nothing could break: the apex is not currently serving anything
+  (see item&nbsp;1), and the change only adds an HTTP&rarr;HTTPS redirect. Reversible at
+  Dashboard &rarr; SSL/TLS &rarr; Edge Certificates &rarr; Always Use HTTPS if you ever want it off.</p>
 </div>
 
 <div class="item"><span class="box"></span>
@@ -203,6 +226,9 @@ npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
 
 <div class="item"><span class="box"></span>
   <h3>10. Durable rate limiting <span class="mins">&mdash; 10 min</span></h3>
+  <p class="why"><em>Update:</em> the in-isolate limiter now rejects a request <em>before</em> it reaches the database, rather
+  than after, and its 429 is no longer cacheable. That closes the wasteful part. It is still per-isolate and still not the
+  authoritative control, so this item stands.</p>
   <p class="why">The Worker enforces a per-isolate limit and emits accurate <code>RateLimit-*</code> headers, but Workers
   isolates do not share memory, so it is best effort rather than an account-wide guarantee. Either enable the commented-out
   rate-limit binding in <code>api/wrangler.toml</code>, or add a WAF rate-limiting rule on

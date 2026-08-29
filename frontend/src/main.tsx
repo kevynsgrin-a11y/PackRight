@@ -15,9 +15,14 @@ const tree = (
 )
 
 // Every canonical route is prerendered to static HTML at build time, so the
-// normal path is hydration. createRoot is the fallback for a document that was
-// served without prerendered markup.
-if (container.hasChildNodes()) {
+// normal path is hydration. createRoot is the fallback for a document served
+// without prerendered markup.
+//
+// firstElementChild, not hasChildNodes(): the dev server serves
+// <div id="root"><!--app-html--></div>, and a comment node is a child node. So
+// dev took the hydrate branch against an empty root and threw "Hydration
+// failed" on every single load, which buried any genuine SSR mismatch.
+if (container.firstElementChild) {
   hydrateRoot(container, tree)
 } else {
   createRoot(container).render(tree)

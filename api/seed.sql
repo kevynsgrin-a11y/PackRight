@@ -73,3 +73,53 @@ REPLACE INTO fee_assumptions (
   ('gate-oversize-carry-on', 'Carry-on too large at the gate', 100, 'USD', 'assumption', NULL, NULL, 'Placeholder retained from the initial MVP build. Gate-check outcomes vary by airline, fare and airport. Displayed as a planning assumption only.', datetime('now')),
   ('overweight-checked', 'Checked bag over the weight limit', 100, 'USD', 'assumption', NULL, NULL, 'Placeholder retained from the initial MVP build. Real overweight charges are banded (for example 51-70 lb and 71-100 lb) and differ per airline. Displayed as a planning assumption only.', datetime('now')),
   ('excess-checked-3plus', 'Third and each additional checked bag', 150, 'USD', 'assumption', NULL, NULL, 'Placeholder retained from the initial MVP build. Displayed as a planning assumption only.', datetime('now'));
+
+-- Retire anything the dataset no longer carries. Children first.
+DELETE FROM fare_families WHERE id NOT IN (
+  'aa-basic',
+  'aa-main',
+  'dl-basic',
+  'dl-main',
+  'ua-basic',
+  'ua-main',
+  'nk-standard',
+  'f9-standard',
+  'wn-wanna',
+  'as-saver',
+  'as-main',
+  'b6-bluebasic',
+  'b6-blue'
+);
+
+DELETE FROM benefits WHERE id NOT IN (
+  'aa-citi',
+  'dl-gold',
+  'ua-explorer',
+  'as-visa',
+  'b6-plus'
+);
+
+DELETE FROM airlines WHERE id NOT IN (
+  'aa',
+  'dl',
+  'ua',
+  'nk',
+  'f9',
+  'wn',
+  'as',
+  'b6'
+);
+
+DELETE FROM tsa_rules WHERE id NOT IN (
+  'liquids',
+  'lithium',
+  'firearms',
+  'knives'
+);
+
+DELETE FROM fee_assumptions WHERE id NOT IN (
+  'oversize-personal-item',
+  'gate-oversize-carry-on',
+  'overweight-checked',
+  'excess-checked-3plus'
+);

@@ -79,6 +79,22 @@ export const DATASET_VERSION: string = raw.meta.version
 export const REVIEW_INTERVAL_DAYS: number = raw.meta.reviewIntervalDays
 export const DEFAULT_SCOPE: string = raw.meta.defaultScope
 
+/**
+ * Narrows a raw dataset value to the documented status enum.
+ *
+ * The previous `as RecordStatus` cast asserted the shape without checking it,
+ * so a typo such as "Unverified" flowed straight through the type system into
+ * every badge and provenance line. Every reader treats a non-'verified' value
+ * as pending, so the failure was silent rather than visible -- which is exactly
+ * why it needs to be caught here, at the boundary, and loudly.
+ */
+const asStatus = (value: unknown): RecordStatus => {
+  if (value !== 'verified' && value !== 'unverified' && value !== 'assumption') {
+    throw new Error(`reference-data.json: unrecognised status ${JSON.stringify(value)}`)
+  }
+  return value
+}
+
 export const airlines: Airline[] = raw.airlines.map((a) => ({
   id: a.id,
   slug: a.slug,
@@ -100,7 +116,7 @@ export const airlines: Airline[] = raw.airlines.map((a) => ({
   verified_by: a.verified_by,
   scope: a.scope,
   currency: a.currency,
-  status: a.status as RecordStatus,
+  status: asStatus(a.status),
   change_note: a.change_note,
 }))
 
@@ -121,7 +137,7 @@ export const fareFamilies: FareFamily[] = raw.fareFamilies.map((f) => ({
   verified_by: f.verified_by,
   scope: f.scope,
   currency: f.currency,
-  status: f.status as RecordStatus,
+  status: asStatus(f.status),
   change_note: f.change_note,
 }))
 
@@ -142,7 +158,7 @@ export const benefits: Benefit[] = raw.benefits.map((b) => ({
   verified_by: b.verified_by,
   scope: b.scope,
   currency: b.currency,
-  status: b.status as RecordStatus,
+  status: asStatus(b.status),
   change_note: b.change_note,
 }))
 
@@ -151,7 +167,7 @@ export const assumptions: FeeAssumption[] = raw.assumptions.map((a) => ({
   label: a.label,
   amount: a.amount,
   currency: raw.meta.currency,
-  status: a.status as RecordStatus,
+  status: asStatus(a.status),
   change_note: a.change_note,
 }))
 

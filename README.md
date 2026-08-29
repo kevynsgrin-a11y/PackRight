@@ -50,7 +50,22 @@ npm run deploy         # runs typecheck + tests, then wrangler deploy
 > `packright-db` now carries the full provenance schema: 8 airlines with slugs and
 > source URLs, 13 fare families, 5 benefits, 4 TSA rules, 4 fee assumptions, and
 > the `data_change_log` table. Only `npm run deploy` and the Pages deploy remain.
-> Re-running the seed is safe and idempotent.
+> Re-running the seed is idempotent, but it is **authoritative, not additive**:
+> as well as writing every record in `data/reference-data.json`, it deletes any
+> row whose id the dataset no longer carries. That is what makes it possible to
+> retire a record. Rehearse first with `npm run db:rehearse`.
+>
+> `migrations/0003_status_check.sql` constrains `status` to the three documented
+> values and **has been applied to production** (29 Aug 2026). It rebuilds five
+> tables; it was rehearsed against a replica first, which is what caught two
+> defects in the draft. Verified afterwards against the live database: row
+> counts unchanged (8 / 13 / 5 / 4 / 4, plus the 2 `data_change_log` entries),
+> foreign keys re-pointed correctly by the rename, and `UPDATE airlines SET
+> status = 'Unverified'` now rejected by the constraint.
+>
+> Production's id set was also reconciled against the dataset before the
+> pruning seed above can be run: they match exactly, so the new `DELETE`
+> statements are a no-op today.
 
 Then deploy `frontend/dist` to Cloudflare Pages. `public/_headers` and
 `public/_redirects` are Pages-specific: **the security headers, the immutable

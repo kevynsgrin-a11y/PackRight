@@ -6,7 +6,7 @@
  * a classified 4xx with a stable error envelope and no internal detail.
  */
 
-import type { BagInput, BagType, CalculationRequest, Dimensions } from './types'
+import type { BagInput, BagType, CalculationRequest, Dimensions } from './types.ts'
 
 export interface ApiErrorBody {
   error: {
@@ -160,6 +160,10 @@ export function parseCalculationRequest(body: unknown): CalculationRequest {
   }
 
   const passengers: CalculationRequest['passengers'] = []
+  // Ids reach the response as `paxId` and are used as React keys, so a
+  // collision between a client-supplied id and the positional default assigned
+  // to a passenger that omitted one has to be a 400, not a silent merge.
+  const seenIds = new Set<string>()
   body.passengers.slice(0, LIMITS.maxPassengers).forEach((raw, i) => {
     const field = `passengers[${i}]`
     if (!isPlainObject(raw)) {
@@ -200,6 +204,11 @@ export function parseCalculationRequest(body: unknown): CalculationRequest {
       }
     }
 
+    if (seenIds.has(id)) {
+      details.push({ field: `${field}.id`, message: 'Must be unique across passengers.' })
+    }
+    seenIds.add(id)
+
     passengers.push({ id, benefitIds, bags })
   })
 
@@ -210,7 +219,17 @@ export function parseCalculationRequest(body: unknown): CalculationRequest {
   return { airlineId, fareFamilyId, passengers }
 }
 
-/** Reads a JSON body with a hard size cap, converting any parse failure into a 400. */
+/**
+ * Reads a JSON body with a hard size cap, converting any parse failure into a 400.
+ *
+ * The cap is enforced by counting bytes off the stream as they arrive, not by
+ * trusting `content-length`. A chunked request omits that header entirely, so
+ * the old pre-check let an unbounded body through; and the post-check compared
+ * `String.length`, which counts UTF-16 code units, so a multibyte payload of
+ * twice the byte limit still passed. Both are closed here, and the read is
+ * cancelled the moment the running total goes over rather than after the whole
+ * body has been buffered.
+ */
 export async function readJsonBody(request: Request): Promise<unknown> {
   const declared = request.headers.get('content-length')
   if (declared && Number(declared) > LIMITS.maxBodyBytes) {
@@ -219,14 +238,12 @@ export async function readJsonBody(request: Request): Promise<unknown> {
 
   let text: string
   try {
-    text = await request.text()
-  } catch {
+    text = await readCappedText(request, LIMITS.maxBodyBytes)
+  } catch (err) {
+    if (err instanceof ApiError) throw err
     throw new ApiError(400, 'INVALID_JSON', 'Request body could not be read.')
   }
 
-  if (text.length > LIMITS.maxBodyBytes) {
-    throw new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body is too large.')
-  }
   if (text.trim() === '') {
     throw new ApiError(400, 'INVALID_REQUEST', 'airlineId, fareFamilyId, and passengers are required.')
   }
@@ -237,4 +254,38 @@ export async function readJsonBody(request: Request): Promise<unknown> {
     // Deliberately does not echo the parser message back to the caller.
     throw new ApiError(400, 'INVALID_JSON', 'Request body is not valid JSON.')
   }
+}
+
+/** Drains a request body, aborting as soon as it exceeds `maxBytes` real bytes. */
+async function readCappedText(request: Request, maxBytes: number): Promise<string> {
+  const body = request.body
+  // No stream to read (an empty body, or a runtime that does not expose one).
+  if (!body) return await request.text()
+
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value) continue
+      total += value.byteLength
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => {})
+        throw new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Request body is too large.')
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock?.()
+  }
+
+  const joined = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    joined.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder().decode(joined)
 }
