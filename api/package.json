@@ -1,20 +1,30 @@
 {
-  "name": "api",
+  "name": "packright-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "PackRight baggage fee calculation API (Cloudflare Worker)",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "wrangler dev",
+    "deploy": "npm run check && wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test \"test/*.test.ts\"",
+    "check": "npm run typecheck && npm run test",
+    "generate:seed": "node scripts/generate-seed.mjs",
+    "db:migrate": "wrangler d1 execute packright-db --remote --file=./migrations/0002_add_provenance.sql",
+    "db:schema": "wrangler d1 execute packright-db --remote --file=./schema.sql",
+    "db:seed": "wrangler d1 execute packright-db --remote --file=./seed.sql"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "hono": "^4.12.33"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260731.1",
+    "@types/node": "^24.13.3",
     "typescript": "^7.0.2",
     "wrangler": "^4.118.0"
   }

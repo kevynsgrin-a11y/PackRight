@@ -1,16 +1,63 @@
-import { defineConfig } from 'vite'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
+import { STATIC_PAGES, renderHeadTags } from './src/lib/seo'
+
+const rootDir = dirname(fileURLToPath(import.meta.url))
+
+/**
+ * Replaces the <!--seo--> marker in index.html with the home page's head.
+ *
+ * scripts/prerender.mjs replaces it again per route, so every canonical URL
+ * ships its own metadata rather than one generic shell. This plugin makes the
+ * dev server and the plain build agree with that instead of shipping an empty
+ * head (the audit found the live title was literally "frontend").
+ */
+function seoHeadPlugin(): Plugin {
+  const home = STATIC_PAGES.find((page) => page.path === '/')!
+  return {
+    name: 'packright-seo-head',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) =>
+        html.replace('<!--seo-->', `<!--seo:start-->\n    ${renderHeadTags(home)}\n    <!--seo:end-->`),
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), seoHeadPlugin()],
   server: {
+    fs: {
+      // data/reference-data.json lives above the Vite root.
+      allow: [resolve(rootDir, '..')],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8787',
-        changeOrigin: true
-      }
-    }
-  }
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    // Hashed filenames plus a one-year immutable cache header (see public/_headers).
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Split the framework out of the app chunk so an app-only change does
+        // not invalidate the vendor code on repeat visits. Rolldown requires
+        // the function form.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined
+          if (id.includes('react-router')) return 'router'
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
+          return undefined
+        },
+      },
+    },
+  },
 })

@@ -5,20 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "npm run typecheck && npm run build:client && npm run build:ssr && npm run prerender && npm run budget",
+    "lint": "oxlint .",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "test": "npm run typecheck && npm run lint",
+    "build:client": "vite build",
+    "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr",
+    "prerender": "node scripts/prerender.mjs",
+    "budget": "node scripts/check-budget.mjs"
   },
   "dependencies": {
-    "@hello-pangea/dnd": "^18.0.1",
     "@tailwindcss/vite": "^4.3.3",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.43.0",
     "lucide-react": "^1.28.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
-    "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

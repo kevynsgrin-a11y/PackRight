@@ -1,0 +1,10 @@
+# Cloudflare Pages redirects.
+#
+# There is deliberately NO `/* /index.html 200` SPA fallback here. That rule is
+# what made robots.txt, sitemap.xml, /privacy and /terms all return the app
+# shell with HTTP 200 (audit issues P0-02 and P1-10). Every canonical route is
+# prerendered to its own HTML file by scripts/prerender.mjs, so Pages serves
+# real documents for known paths and 404.html with a 404 status for the rest.
+
+# One canonical hostname. The audit found www did not resolve.
+https://www.luggageliason.com/* https://luggageliason.com/:splat 301!
