@@ -492,6 +492,9 @@ export function calculateFees(inputs: EngineInputs): CalculationResponse {
       title: c.record.source_title,
       url: c.record.source_url,
       verified_at: c.record.verified_at,
+      // Carried through deliberately. When this was omitted the UI reconstructed
+      // a status from the date alone and badged unverified records "Verified".
+      status: c.record.status,
     })),
   }
 

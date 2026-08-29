@@ -73,7 +73,14 @@ export interface DataQuality {
   reviewIntervalDays: number
   lastVerifiedAt: string | null
   pendingRecords: Array<{ type: string; id: string; status: RecordStatus; verified_at: string | null }>
-  sources: Array<{ type: string; id: string; title: string | null; url: string | null; verified_at: string | null }>
+  sources: Array<{
+    type: string
+    id: string
+    title: string | null
+    url: string | null
+    verified_at: string | null
+    status: RecordStatus
+  }>
 }
 
 export interface CalculationResult {

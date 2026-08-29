@@ -141,7 +141,15 @@ export interface DataQuality {
   lastVerifiedAt: string | null
   /** Ids of records that are unverified or past the review interval. */
   pendingRecords: Array<{ type: string; id: string; status: RecordStatus; verified_at: string | null }>
-  sources: Array<{ type: string; id: string; title: string | null; url: string | null; verified_at: string | null }>
+  sources: Array<{
+    type: string
+    id: string
+    title: string | null
+    url: string | null
+    verified_at: string | null
+    /** The record's real status. Without this the UI can only guess from the date. */
+    status: RecordStatus
+  }>
 }
 
 export interface CalculationResponse {

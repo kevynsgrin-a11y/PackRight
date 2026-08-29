@@ -186,7 +186,9 @@ export default function FeeMatrix({ result }: { result: CalculationResult | null
                       source_url: source.url,
                       source_title: source.title,
                       verified_at: source.verified_at,
-                      status: source.verified_at ? 'verified' : 'unverified',
+                      // The API's real status. Deriving it from the date badged
+                      // never-verified records as "Verified".
+                      status: source.status ?? 'unverified',
                     }}
                   />
                 </li>

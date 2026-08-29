@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, ExternalLink, Info } from 'lucide-react'
 import { formatDate } from '../lib/format'
+import { REVIEW_INTERVAL_DAYS, isReviewPending } from '../lib/data'
 import type { RecordStatus } from '../lib/data'
 
 interface SourceLike {
@@ -18,7 +19,11 @@ interface SourceLike {
  * labelled "Review pending" rather than presented as confirmed.
  */
 export function StatusBadge({ status, verifiedAt }: { status?: RecordStatus; verifiedAt?: string | null }) {
-  const verified = status === 'verified' && !!verifiedAt
+  // A record whose check has aged past the review interval is NOT verified any
+  // more. Showing a green badge for a two-year-old check would contradict the
+  // promise the methodology page makes about the review cadence.
+  const verified =
+    status === 'verified' && !!verifiedAt && !isReviewPending({ status, verified_at: verifiedAt })
 
   if (verified) {
     return (
@@ -38,10 +43,18 @@ export function StatusBadge({ status, verifiedAt }: { status?: RecordStatus; ver
     )
   }
 
+  const expired = status === 'verified' && !!verifiedAt
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-300 border border-amber-500/25">
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-300 border border-amber-500/25"
+      title={
+        expired
+          ? `Last checked ${formatDate(verifiedAt)}, more than ${REVIEW_INTERVAL_DAYS} days ago.`
+          : undefined
+      }
+    >
       <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-      Review pending
+      {expired ? `Review due (checked ${formatDate(verifiedAt)})` : 'Review pending'}
     </span>
   )
 }

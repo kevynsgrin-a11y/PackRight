@@ -52,7 +52,10 @@ jobs:
       - run: npm ci
         working-directory: frontend
 
-      - run: npm run lint
+      # --deny-warnings, because oxlint exits 0 on warnings by default. Without
+      # it the lint step could never fail and the gate was decorative.
+      - name: Lint (warnings are errors)
+        run: npx oxlint . --deny-warnings
         working-directory: frontend
 
       # Typechecks, builds the client and SSR bundles, prerenders every

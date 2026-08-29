@@ -143,8 +143,19 @@ export default function KnapsackAllocator({
                 <p className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-xs flex items-start gap-2">
                   <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
                   <span className="text-red-200">
-                    Contains an item the TSA does not allow through a checkpoint. Move it to your
-                    checked bag.
+                    This bag holds something PackRight flags as checked-bag only, based on the
+                    example items loaded above rather than on a screening decision. Rules change and
+                    screening officers have the final say, so check the{' '}
+                    <a
+                      href="https://www.tsa.gov/travel/security-screening/whatcanibring"
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="underline underline-offset-2 hover:text-white"
+                    >
+                      TSA&rsquo;s own What Can I Bring list
+                      <span className="sr-only"> (opens in a new tab)</span>
+                    </a>{' '}
+                    before you pack.
                   </span>
                 </p>
               ) : null}

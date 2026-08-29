@@ -19,9 +19,11 @@ interface Props {
  * disclosure next to it, per /affiliate-disclosure.
  */
 export default function FeeAvoidanceTips({ result, airline }: Props) {
-  if (!result) return null
+  // Same shape guard FeeMatrix applies. Without it an unexpected 200 body threw
+  // inside render and, with no error boundary above it, blanked the whole page.
+  if (!result || !Array.isArray(result.passengerBreakdown)) return null
 
-  const bags = result.passengerBreakdown.flatMap((p) => p.bags)
+  const bags = result.passengerBreakdown.flatMap((p) => (Array.isArray(p?.bags) ? p.bags : []))
   const tips: Array<{ id: string; text: React.ReactNode }> = []
 
   const unpricedCarryOn = bags.some((b) => b.type === 'carry_on' && b.status === 'unpriced')
