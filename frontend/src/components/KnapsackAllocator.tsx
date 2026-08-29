@@ -133,7 +133,7 @@ export default function KnapsackAllocator({
                 })}
 
                 {bin.items.length === 0 ? (
-                  <li className="text-xs text-center py-6 text-text-muted opacity-70">
+                  <li className="text-xs text-center py-6 text-text-muted">
                     No items in this bag
                   </li>
                 ) : null}

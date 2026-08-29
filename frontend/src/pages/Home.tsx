@@ -495,9 +495,18 @@ export default function Home() {
           </p>
         ) : null}
 
+        {/*
+          Marked with a ring rather than dimmed. An opacity wrapper pushed every
+          string inside the panel under the 4.5:1 contrast minimum, including the
+          estimate disclaimer, so staleness is signalled without touching colour.
+        */}
         <div
           aria-busy={calcStatus === 'loading'}
-          className={resultIsStale || calcStatus === 'error' ? 'opacity-60' : undefined}
+          className={
+            resultIsStale || calcStatus === 'error'
+              ? 'rounded-2xl ring-2 ring-amber-500/40'
+              : undefined
+          }
         >
           <FeeMatrix result={result} />
         </div>

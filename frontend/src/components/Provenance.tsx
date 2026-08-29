@@ -73,7 +73,7 @@ export function ProvenanceNote({ record, className = '' }: { record: SourceLike;
       ) : (
         <span>No source recorded.</span>
       )}
-      {record.scope ? <span className="opacity-80">Scope: {record.scope}.</span> : null}
+      {record.scope ? <span>Scope: {record.scope}.</span> : null}
     </p>
   )
 }
