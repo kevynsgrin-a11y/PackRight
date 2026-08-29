@@ -89,6 +89,10 @@
     <li><strong>Accessibility:</strong> zero axe-core violations across 13 routes and 5 error/warning states. 24 keyboard stops, none unnamed, all with a visible focus ring. No horizontal overflow at 320/390/768/1440&nbsp;px.</li>
     <li><strong>Security headers verified</strong> as actually served, with the CSP proven not to block anything the real pages load. Service worker verified: installs, works offline, and correctly refuses to serve a cached API response.</li>
     <li>Legal entity, postal address, California governing law and a Do&nbsp;Not&nbsp;Track statement added to the policy pages.</li>
+    <li><strong>A second, adversarial audit</strong> across 12 dimensions found and fixed further defects, including a
+    regression where the UI rebuilt a green &ldquo;Verified&rdquo; badge from a date for records the API had marked
+    unverified, a malformed <code>Cache-Control</code> on every rate-limit response, a render crash that blanked the page on a
+    malformed API body, a CI lint gate that could never fail, and a fabricated Southwest dimension in my own dataset.</li>
   </ul>
 </div>
 
@@ -127,7 +131,7 @@ curl -s https://packright-api.kevynsgrin.workers.dev/api/v1/health</pre>
 npm ci &amp;&amp; npm run build
 npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
   <div class="flag"><code>public/_headers</code> and <code>public/_redirects</code> are <strong>Cloudflare Pages specific</strong>.
-  Every security header, the one-year asset cache and the www redirect only take effect on Pages. On any other host they are
+  Every security header and the one-year asset cache only take effect on Pages. On any other host they are
   inert files and the site ships with none of that protection.</div>
 </div>
 
@@ -165,9 +169,14 @@ npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
   <div class="flag">There is <strong>no <code>www</code> DNS record at all</strong> on the zone. The audit noticed www did not
   resolve; that is why. The redirect rule I shipped in <code>_redirects</code> can never fire until www exists.</div>
   <p class="why">Every other site in your portfolio (bountycharts, glp1-fund, ridereadyguide, benefitdial, gochujang,
-  originespana, kbbqguide) has www as a Pages custom domain. This one is the odd one out. Either add a proxied
-  <code>www</code> CNAME pointing at the Pages project <em>and</em> add <code>www.luggageliason.com</code> as a custom domain on
-  that project, or delete the redirect line so it is not misleading.</p>
+  originespana, kbbqguide) has www as a Pages custom domain. This one is the odd one out.</p>
+  <p class="why">I have <strong>removed</strong> the redirect rule, because it could never have worked: Cloudflare Pages
+  <code>_redirects</code> matches on path only, so an absolute URL in the source position is inert, and the trailing
+  <code>!</code> was Netlify syntax. A rule that looks like policy but does nothing is worse than none. To actually
+  canonicalise www: add a proxied <code>www</code> CNAME to the Pages project, add
+  <code>www.luggageliason.com</code> as a custom domain on it, then create a dashboard Redirect Rule
+  (Rules &rarr; Redirect Rules) matching that hostname to the apex, 301, preserving path and query. Or decide www is
+  simply not used and leave it absent.</p>
 </div>
 
 <div class="item"><span class="box"></span>
@@ -178,10 +187,10 @@ npx wrangler pages deploy dist --project-name=&lt;PROJECT&gt;</pre>
 </div>
 
 <div class="item"><span class="box"></span>
-  <h3>8. Confirm Cloudflare Web Analytics <span class="mins">&mdash; 5 min</span></h3>
-  <p class="why">The privacy page states you use Cloudflare Web Analytics, that it is cookieless and does not fingerprint.
-  Confirm it is actually enabled for this zone and that the retention settings match what the page claims. If you are not using
-  it, tell me and I will remove the claim &mdash; a privacy policy describing analytics you do not run is its own problem.</p>
+  <h3>8. Cloudflare Web Analytics &mdash; verified, nothing to do <span class="mins">&mdash; 0 min</span></h3>
+  <p class="why">I checked this against the Cloudflare API rather than leaving it to you. Web Analytics <strong>is</strong>
+  enabled for luggageliason.com with auto-install (site tag <code>7e2f42ed&hellip;</code>), so the privacy page's claim is
+  accurate. The beacon does not appear in the built output because Cloudflare injects it at the edge. Tick this and move on.</p>
 </div>
 
 <div class="item"><span class="box"></span>
