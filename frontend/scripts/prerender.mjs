@@ -14,14 +14,14 @@
  */
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '..')
 const distDir = join(root, 'dist')
 const ssrEntry = join(root, 'dist-ssr', 'entry-server.js')
 
-const { render, routes, notFoundMeta, siteUrl } = await import(ssrEntry)
+const { render, routes, notFoundMeta, siteUrl } = await import(pathToFileURL(ssrEntry).href)
 
 const SEO_BLOCK = /<!--seo:start-->[\s\S]*?<!--seo:end-->/
 const APP_HTML = '<!--app-html-->'
