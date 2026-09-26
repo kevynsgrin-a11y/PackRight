@@ -26,8 +26,9 @@ export default function Privacy() {
         <p className="text-white">
           PackRight does not require an account or precise location to calculate an estimate. We send
           the airline, fare, passenger count, selected eligible benefit, and bag details you enter to
-          our calculation service to return the estimate. We use Cloudflare Web Analytics to
-          understand aggregate site performance. We do not sell personal information. Contact{' '}
+          our calculation service to return the estimate. We use Google Analytics 4 and Cloudflare
+          Web Analytics to understand aggregate site traffic and performance. We do not sell personal
+          information. Contact{' '}
           <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a> to ask privacy questions.
         </p>
 
@@ -44,8 +45,9 @@ export default function Privacy() {
           an estimate. There is no account and no login.
         </p>
         <p>
-          The application does not write to cookies, <code>localStorage</code>,{' '}
-          <code>sessionStorage</code> or IndexedDB, and does not request geolocation.
+          The application itself does not write to cookies, <code>localStorage</code>,{' '}
+          <code>sessionStorage</code> or IndexedDB, and does not request geolocation. Google
+          Analytics, described <a href="#analytics">below</a>, sets its own cookies.
         </p>
         <p>
           It does use one form of browser storage: a service worker stores a copy of the
@@ -78,6 +80,15 @@ export default function Privacy() {
           We use Cloudflare Web Analytics to understand aggregate traffic and performance. It is a
           privacy-first product: it does not use cookies and does not fingerprint visitors. It is
           loaded from <code>static.cloudflareinsights.com</code>.
+        </p>
+        <p>
+          We also use Google Analytics 4 to measure aggregate traffic: which pages are viewed,
+          approximate location and device type. Google sets cookies (<code>_ga</code> and{' '}
+          <code>_ga_*</code>) to do this, and the script is loaded from{' '}
+          <code>www.googletagmanager.com</code>. Google processes this data under its{' '}
+          <a href="https://policies.google.com/privacy">privacy policy</a>. You can opt out with
+          Google&rsquo;s{' '}
+          <a href="https://tools.google.com/dlpage/gaoptout">browser add-on</a>.
         </p>
         <p>
           We do not run advertising pixels, retargeting scripts, session recording, or cross-site
