@@ -87,6 +87,21 @@ jobs:
             echo "Found placeholder href=\"#\" links in the built output"; exit 1
           fi
 
+          # GA4 must run under the CSP in _headers: one loader with the site's
+          # ID, the bootstrap as a same-origin file (no inline gtag call, since
+          # script-src has no 'unsafe-inline'), and the Google hosts allowed.
+          test "$(grep -o 'googletagmanager.com/gtag/js?id=G-HDR71MFSXM' dist/index.html | wc -l)" -eq 1
+          grep -q '<script src="/ga4.js"></script>' dist/index.html
+          grep -q 'gtag("config", "G-HDR71MFSXM")' dist/ga4.js
+          if grep -rq 'gtag(' dist --include='*.html'; then
+            echo "Found an inline gtag() call; the CSP will refuse it"; exit 1
+          fi
+          csp="$(grep 'Content-Security-Policy:' dist/_headers)"
+          for host in 'https://www.googletagmanager.com' 'https://*.google-analytics.com' \
+            'https://*.analytics.google.com' 'https://*.googletagmanager.com' 'https://cloudflareinsights.com'; do
+            case "$csp" in *"$host"*) ;; *) echo "CSP is missing $host"; exit 1 ;; esac
+          done
+
   data:
     name: Reference data (generated seed is current)
     runs-on: ubuntu-latest
