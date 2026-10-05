@@ -5,4 +5,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://luggageliason.com/sitemap.xml
+Sitemap: https://www.luggageliason.com/sitemap.xml
