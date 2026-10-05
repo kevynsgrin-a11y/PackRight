@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CalculatorCta, PageHeader, Prose } from '../components/Page'
+import { explainerFaqs } from '../lib/explainerFaq'
 
 export default function HowBaggageFeesWork() {
   return (
@@ -78,6 +79,14 @@ export default function HowBaggageFeesWork() {
           <li>Pay for bags during booking, not at the airport.</li>
           <li>Check whether a card you already hold waives the first bag.</li>
         </ul>
+
+        <h2 id="questions">Questions people ask</h2>
+        {explainerFaqs().map((entry) => (
+          <div key={entry.question}>
+            <h3>{entry.question}</h3>
+            <p>{entry.answer}</p>
+          </div>
+        ))}
 
         <p>
           Put your own trip through the <Link to="/">calculator</Link> to see which of these applies,
