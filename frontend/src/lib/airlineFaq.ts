@@ -104,25 +104,25 @@ export function airlineFaqs(airline: Airline): FaqEntry[] {
   }
 
   // Carry-on cost FAQ, generated from the fare data like the checked-bag one.
+  // carry_on_fee is null across the dataset today (inclusion is boolean), so the
+  // honest generated answer is the inclusion count, not a dollar figure.
   // Targets the GSC questions already reaching the airline pages: 'delta
   // airlines carry on fee', 'how much does united charge for a carry on',
   // 'united airlines carry on cost', 'how much is luggage on united'.
-  const carryFees = fares
-    .map((f) => f.carry_on_fee)
-    .filter((f): f is number => f !== null)
-  if (carryFees.length > 0) {
-    const carryMin = Math.min(...carryFees)
-    const carryMax = Math.max(...carryFees)
+  if (fares.length > 0) {
+    const withCarryOn = fares.filter((f) => f.includes_carry_on)
+    const inclusion =
+      withCarryOn.length === fares.length
+        ? `Every fare family PackRight models for ${airline.name} includes a carry-on.`
+        : withCarryOn.length === 0
+          ? `No fare family PackRight models for ${airline.name} includes a carry-on — the lowest fares price it separately.`
+          : `${withCarryOn.length} of the ${fares.length} fare families PackRight models for ${airline.name} include a carry-on; the others price it separately.`
     entries.push({
-      question: `How much is a carry-on bag on ${airline.name}?`,
+      question: `Does a carry-on cost money on ${airline.name}?`,
       answer:
-        `PackRight models a carry-on bag on ${airline.name} at ` +
-        (carryMin === carryMax
-          ? `${money(carryMin)}`
-          : `${money(carryMin)} to ${money(carryMax)} depending on the fare family`) +
-        `, for a one-way US domestic trip. Higher fare families can include it outright, and paying ` +
-        `during booking is usually cheaper than paying at the gate, where a carry-on that does not ` +
-        `fit the sizer is gate-checked. ${unverified}`,
+        `${inclusion} Which side of that line you are on is decided by the fare family on your ` +
+        `ticket, not by the bag — check what your fare includes before you pack, because the ` +
+        `cheapest fares carry the bag charge that the headline price left out. ${unverified}`,
     })
   }
 
