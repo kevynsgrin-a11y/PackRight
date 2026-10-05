@@ -15,7 +15,7 @@ import { airlineFaqs } from './airlineFaq'
 import { explainerFaqs } from './explainerFaq'
 import { LEGAL_ENTITY, MAILING_ADDRESS } from './site'
 
-export const SITE_URL = 'https://luggageliason.com'
+export const SITE_URL = 'https://www.luggageliason.com'
 export const SITE_NAME = 'PackRight'
 export const OG_IMAGE = `${SITE_URL}/og/packright-home.png`
 export const CONTACT_EMAIL = 'hello@luggageliason.com'
