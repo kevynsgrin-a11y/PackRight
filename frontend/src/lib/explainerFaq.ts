@@ -31,3 +31,35 @@ export function explainerFaqs(): FaqEntry[] {
     },
   ]
 }
+
+/**
+ * FAQ for the carry-on size checker page. Same rule as the rest of this file:
+ * the page renders these visibly and seo.ts emits the schema. Targets the GSC
+ * queries already reaching /carry-on-size-checker: 'carry on checker' #86,
+ * 'carry on compliance checker' #87.5, 'luggage checker' #91, 'airport bag
+ * size checker' #97.
+ */
+export function checkerFaqs(): FaqEntry[] {
+  return [
+    {
+      question: 'What is a carry-on checker?',
+      answer:
+        'It is a tool that compares your bag\u2019s measurements — length, width, and height, wheels and handles included — against each airline\u2019s published carry-on and personal-item limits, so you know before you pack whether your bag fits the sizer. This page is one: enter your bag once and it checks every airline PackRight models.',
+    },
+    {
+      question: 'Is a carry-on compliance checker the same thing?',
+      answer:
+        'Yes — \u201ccompliance\u201d is the stricter word for the same question: does the bag fit within all three dimensions at once, not just the longest one? Airlines measure in three dimensions, wheels and handles count, and the widest points of the bag are what get measured, so a bag that is compliant by one dimension can still fail the sizer.',
+    },
+    {
+      question: 'Do wheels and handles count when measuring a carry-on?',
+      answer:
+        'Yes. Airline limits include wheels and handles in the measurements, which is why a bag marketed as \u201c22-inch carry-on\u201d can exceed a 22-inch limit once the wheels are in. Measure the complete bag at its widest points, including anything that protrudes, and check it against the airline before you fly.',
+    },
+    {
+      question: 'What happens if my carry-on is over the limit?',
+      answer:
+        'At the gate, an oversized carry-on is usually gate-checked, which can cost more than checking it at the desk would have. That is the outcome a carry-on checker exists to prevent: measuring at home, against the actual limit for your airline, costs nothing.',
+    },
+  ]
+}

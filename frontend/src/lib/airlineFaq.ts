@@ -103,6 +103,29 @@ export function airlineFaqs(airline: Airline): FaqEntry[] {
     })
   }
 
+  // Carry-on cost FAQ, generated from the fare data like the checked-bag one.
+  // Targets the GSC questions already reaching the airline pages: 'delta
+  // airlines carry on fee', 'how much does united charge for a carry on',
+  // 'united airlines carry on cost', 'how much is luggage on united'.
+  const carryFees = fares
+    .map((f) => f.carry_on_fee)
+    .filter((f): f is number => f !== null)
+  if (carryFees.length > 0) {
+    const carryMin = Math.min(...carryFees)
+    const carryMax = Math.max(...carryFees)
+    entries.push({
+      question: `How much is a carry-on bag on ${airline.name}?`,
+      answer:
+        `PackRight models a carry-on bag on ${airline.name} at ` +
+        (carryMin === carryMax
+          ? `${money(carryMin)}`
+          : `${money(carryMin)} to ${money(carryMax)} depending on the fare family`) +
+        `, for a one-way US domestic trip. Higher fare families can include it outright, and paying ` +
+        `during booking is usually cheaper than paying at the gate, where a carry-on that does not ` +
+        `fit the sizer is gate-checked. ${unverified}`,
+    })
+  }
+
   if (airline.checked_bag_weight != null) {
     entries.push({
       question: `How heavy can a checked bag be on ${airline.name}?`,
