@@ -103,6 +103,29 @@ export function airlineFaqs(airline: Airline): FaqEntry[] {
     })
   }
 
+  // Carry-on cost FAQ, generated from the fare data like the checked-bag one.
+  // carry_on_fee is null across the dataset today (inclusion is boolean), so the
+  // honest generated answer is the inclusion count, not a dollar figure.
+  // Targets the GSC questions already reaching the airline pages: 'delta
+  // airlines carry on fee', 'how much does united charge for a carry on',
+  // 'united airlines carry on cost', 'how much is luggage on united'.
+  if (fares.length > 0) {
+    const withCarryOn = fares.filter((f) => f.includes_carry_on)
+    const inclusion =
+      withCarryOn.length === fares.length
+        ? `Every fare family PackRight models for ${airline.name} includes a carry-on.`
+        : withCarryOn.length === 0
+          ? `No fare family PackRight models for ${airline.name} includes a carry-on — the lowest fares price it separately.`
+          : `${withCarryOn.length} of the ${fares.length} fare families PackRight models for ${airline.name} include a carry-on; the others price it separately.`
+    entries.push({
+      question: `Does a carry-on cost money on ${airline.name}?`,
+      answer:
+        `${inclusion} Which side of that line you are on is decided by the fare family on your ` +
+        `ticket, not by the bag — check what your fare includes before you pack, because the ` +
+        `cheapest fares carry the bag charge that the headline price left out. ${unverified}`,
+    })
+  }
+
   if (airline.checked_bag_weight != null) {
     entries.push({
       question: `How heavy can a checked bag be on ${airline.name}?`,

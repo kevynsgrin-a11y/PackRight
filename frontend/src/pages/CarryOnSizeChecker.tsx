@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { CalculatorCta, PageHeader, Prose } from '../components/Page'
+import { checkerFaqs } from '../lib/explainerFaq'
 import { StatusBadge } from '../components/Provenance'
 import { airlines } from '../lib/data'
 import { fitsWithin, type Box } from '../lib/fit'
@@ -180,6 +181,14 @@ export default function CarryOnSizeChecker() {
           <Link to="/methodology">methodology</Link> for what that means, or compare the smaller bag
           in our <Link to="/personal-item-size-comparison">personal item comparison</Link>.
         </p>
+
+        <h2>Questions people ask</h2>
+        {checkerFaqs().map((entry) => (
+          <div key={entry.question}>
+            <h3>{entry.question}</h3>
+            <p>{entry.answer}</p>
+          </div>
+        ))}
       </Prose>
 
       <CalculatorCta />

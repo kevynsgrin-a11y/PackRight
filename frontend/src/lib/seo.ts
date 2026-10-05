@@ -12,7 +12,7 @@
 
 import { airlines } from './data'
 import { airlineFaqs } from './airlineFaq'
-import { explainerFaqs } from './explainerFaq'
+import { checkerFaqs, explainerFaqs } from './explainerFaq'
 import { LEGAL_ENTITY, MAILING_ADDRESS } from './site'
 
 export const SITE_URL = 'https://www.luggageliason.com'
@@ -123,6 +123,9 @@ export const STATIC_PAGES: PageMeta[] = [
         { name: 'Home', path: '/' },
         { name: 'Carry-on size checker', path: '/carry-on-size-checker' },
       ]),
+      // Only emitted because the page renders exactly these questions and
+      // answers visibly. See src/lib/explainerFaq.ts (checkerFaqs).
+      faqSchema(checkerFaqs()),
     ],
   },
   {
